@@ -39,17 +39,29 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 1. Check Env Vars (Gemini API Key)
-  // Vite replaces these during build - they become literal strings in the compiled code
-  const GEMINI_API_KEY = typeof process !== 'undefined' && process.env ? (process.env.API_KEY || process.env.GEMINI_API_KEY) : '';
+  // Vite replaces process.env.API_KEY during build with JSON.stringify(value)
+  // So if the env var exists, it will be a string like "AIzaSy..."
+  // If it doesn't exist, it will be "" (empty string)
+  const GEMINI_API_KEY = (typeof process !== 'undefined' && process.env && (process.env.API_KEY || process.env.GEMINI_API_KEY)) || '';
   
   useEffect(() => {
-    // After Vite build, GEMINI_API_KEY will be the actual string value or empty string
-    // Vite replaces process.env.API_KEY with the JSON.stringify'd value during build
-    if (GEMINI_API_KEY && GEMINI_API_KEY.length > 0 && GEMINI_API_KEY !== '""') {
-      console.log('API Key detected:', GEMINI_API_KEY.substring(0, 10) + '...');
+    // After Vite build, GEMINI_API_KEY is replaced with the JSON.stringify'd value
+    // JSON.stringify("AIzaSy...") = "AIzaSy..." (string with quotes in code)
+    // JSON.stringify("") = "" (empty string with quotes)
+    // So we need to check if it's a non-empty string (length > 2 because of quotes)
+    // Actually, JSON.stringify returns the string WITH quotes, so "" has length 2
+    const hasKey = GEMINI_API_KEY && 
+                   typeof GEMINI_API_KEY === 'string' && 
+                   GEMINI_API_KEY.length > 2 && // More than just ""
+                   GEMINI_API_KEY !== '""' && 
+                   GEMINI_API_KEY !== 'undefined' &&
+                   !GEMINI_API_KEY.startsWith('"') || GEMINI_API_KEY.length > 2;
+    
+    if (hasKey) {
+      console.log('API Key detected, length:', GEMINI_API_KEY.length);
       setHasApiKey(true);
     } else {
-      console.warn('API Key not found. Value:', GEMINI_API_KEY);
+      console.warn('API Key not found. Value:', GEMINI_API_KEY, 'Type:', typeof GEMINI_API_KEY, 'Length:', GEMINI_API_KEY?.length);
     }
   }, []);
 
