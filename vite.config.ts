@@ -8,9 +8,18 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     
     // Prioritize process.env (Vercel) over .env files (local dev)
-    const geminiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY;
-    const supabaseUrl = process.env.SUPABASE_URL || env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || '';
+    const supabaseUrl = process.env.SUPABASE_URL || env.SUPABASE_URL || '';
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || '';
+    
+    // Debug: log during build (only in Vercel build logs)
+    if (process.env.VERCEL) {
+      console.log('Build env vars:', {
+        hasGeminiKey: !!geminiKey,
+        hasSupabaseUrl: !!supabaseUrl,
+        hasSupabaseKey: !!supabaseKey
+      });
+    }
     
     return {
       server: {
@@ -19,10 +28,10 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(geminiKey),
-        'process.env.GEMINI_API_KEY': JSON.stringify(geminiKey),
-        'process.env.SUPABASE_URL': JSON.stringify(supabaseUrl),
-        'process.env.SUPABASE_ANON_KEY': JSON.stringify(supabaseKey)
+        'process.env.API_KEY': JSON.stringify(geminiKey || ''),
+        'process.env.GEMINI_API_KEY': JSON.stringify(geminiKey || ''),
+        'process.env.SUPABASE_URL': JSON.stringify(supabaseUrl || ''),
+        'process.env.SUPABASE_ANON_KEY': JSON.stringify(supabaseKey || '')
       },
       resolve: {
         alias: {
