@@ -43,11 +43,14 @@ const App: React.FC = () => {
     try {
       // Vite replaces process.env.API_KEY with the actual value during build
       // In production (Vercel), this will be the actual API key string
-      if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-          setHasApiKey(true);
-      } else if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
-          // Fallback to GEMINI_API_KEY if API_KEY is not set
-          setHasApiKey(true);
+      const apiKey = typeof process !== 'undefined' && process.env ? (process.env.API_KEY || process.env.GEMINI_API_KEY) : null;
+      
+      // Debug: log the value (will be removed in production)
+      if (apiKey) {
+        console.log('API Key detected:', apiKey.substring(0, 10) + '...');
+        setHasApiKey(true);
+      } else {
+        console.warn('API Key not found. process.env:', typeof process !== 'undefined' && process.env ? Object.keys(process.env).filter(k => k.includes('GEMINI') || k.includes('API')) : 'process.env not available');
       }
     } catch(e) {
       console.error('Error checking API key:', e);
