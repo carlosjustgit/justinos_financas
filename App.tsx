@@ -208,9 +208,7 @@ const App: React.FC = () => {
 
   // --- Branding Component ---
   const BrandLogo = ({ size = 'normal' }: { size?: 'normal' | 'large' }) => {
-    // NOTA: Substitua o src abaixo pelo URL real do logo que carregou ou coloque o ficheiro na pasta do projeto
-    // e use src="/logo.png"
-    const logoUrl = "https://i.imgur.com/example-placeholder.png"; 
+    const logoUrl = "/logo-financas-pessoais.jpeg"; 
     
     if (size === 'large') {
         return (
