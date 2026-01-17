@@ -39,29 +39,17 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 1. Check Env Vars (Gemini API Key)
+  // Vite replaces these during build - they become literal strings in the compiled code
+  const GEMINI_API_KEY = typeof process !== 'undefined' && process.env ? (process.env.API_KEY || process.env.GEMINI_API_KEY) : '';
+  
   useEffect(() => {
-    try {
-      // Vite replaces process.env.API_KEY with the actual value during build
-      // After build, process.env.API_KEY will be the actual string value or undefined
-      // We need to check if it exists and is not empty
-      let apiKey: string | undefined = undefined;
-      
-      // Try to access process.env (Vite replaces these during build)
-      if (typeof process !== 'undefined' && process.env) {
-        apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-      }
-      
-      // Check if apiKey is a non-empty string
-      // After Vite build, if the env var exists, it will be a string
-      // If it doesn't exist, it will be undefined (not replaced)
-      if (apiKey && typeof apiKey === 'string' && apiKey.length > 0) {
-        console.log('API Key detected:', apiKey.substring(0, 10) + '...');
-        setHasApiKey(true);
-      } else {
-        console.warn('API Key not found. Value:', apiKey);
-      }
-    } catch(e) {
-      console.error('Error checking API key:', e);
+    // After Vite build, GEMINI_API_KEY will be the actual string value or empty string
+    // Vite replaces process.env.API_KEY with the JSON.stringify'd value during build
+    if (GEMINI_API_KEY && GEMINI_API_KEY.length > 0 && GEMINI_API_KEY !== '""') {
+      console.log('API Key detected:', GEMINI_API_KEY.substring(0, 10) + '...');
+      setHasApiKey(true);
+    } else {
+      console.warn('API Key not found. Value:', GEMINI_API_KEY);
     }
   }, []);
 
