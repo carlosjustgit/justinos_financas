@@ -45,23 +45,18 @@ const App: React.FC = () => {
   const GEMINI_API_KEY = (typeof process !== 'undefined' && process.env && (process.env.API_KEY || process.env.GEMINI_API_KEY)) || '';
   
   useEffect(() => {
-    // After Vite build, GEMINI_API_KEY is replaced with the JSON.stringify'd value
-    // JSON.stringify("AIzaSy...") = "AIzaSy..." (string with quotes in code)
-    // JSON.stringify("") = "" (empty string with quotes)
-    // So we need to check if it's a non-empty string (length > 2 because of quotes)
-    // Actually, JSON.stringify returns the string WITH quotes, so "" has length 2
-    const hasKey = GEMINI_API_KEY && 
-                   typeof GEMINI_API_KEY === 'string' && 
-                   GEMINI_API_KEY.length > 2 && // More than just ""
-                   GEMINI_API_KEY !== '""' && 
-                   GEMINI_API_KEY !== 'undefined' &&
-                   !GEMINI_API_KEY.startsWith('"') || GEMINI_API_KEY.length > 2;
+    // After Vite build, GEMINI_API_KEY is replaced with JSON.stringify(value)
+    // If env var exists: JSON.stringify("AIzaSy...") becomes "AIzaSy..." (40+ chars)
+    // If env var is empty: JSON.stringify("") becomes "" (2 chars - just quotes)
+    // So we check if length > 2 (more than just the quotes)
+    const hasKey = typeof GEMINI_API_KEY === 'string' && 
+                   GEMINI_API_KEY.length > 2;
     
     if (hasKey) {
-      console.log('API Key detected, length:', GEMINI_API_KEY.length);
+      console.log('API Key detected');
       setHasApiKey(true);
     } else {
-      console.warn('API Key not found. Value:', GEMINI_API_KEY, 'Type:', typeof GEMINI_API_KEY, 'Length:', GEMINI_API_KEY?.length);
+      console.warn('API Key not found. Value:', GEMINI_API_KEY, 'Length:', GEMINI_API_KEY?.length);
     }
   }, []);
 
