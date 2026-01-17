@@ -42,15 +42,23 @@ const App: React.FC = () => {
   useEffect(() => {
     try {
       // Vite replaces process.env.API_KEY with the actual value during build
-      // In production (Vercel), this will be the actual API key string
-      const apiKey = typeof process !== 'undefined' && process.env ? (process.env.API_KEY || process.env.GEMINI_API_KEY) : null;
+      // After build, process.env.API_KEY will be the actual string value or undefined
+      // We need to check if it exists and is not empty
+      let apiKey: string | undefined = undefined;
       
-      // Debug: log the value (will be removed in production)
-      if (apiKey) {
+      // Try to access process.env (Vite replaces these during build)
+      if (typeof process !== 'undefined' && process.env) {
+        apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+      }
+      
+      // Check if apiKey is a non-empty string
+      // After Vite build, if the env var exists, it will be a string
+      // If it doesn't exist, it will be undefined (not replaced)
+      if (apiKey && typeof apiKey === 'string' && apiKey.length > 0) {
         console.log('API Key detected:', apiKey.substring(0, 10) + '...');
         setHasApiKey(true);
       } else {
-        console.warn('API Key not found. process.env:', typeof process !== 'undefined' && process.env ? Object.keys(process.env).filter(k => k.includes('GEMINI') || k.includes('API')) : 'process.env not available');
+        console.warn('API Key not found. Value:', apiKey);
       }
     } catch(e) {
       console.error('Error checking API key:', e);
