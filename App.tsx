@@ -88,11 +88,17 @@ const App: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
+    
+    // Use origin para garantir que funciona tanto em dev quanto em produção
+    // Se estiver em produção (não localhost), usa a URL de produção
+    // Se estiver em dev, usa localhost
+    const redirectUrl = window.location.origin;
+    
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        // Redirect to the current URL after login
-        emailRedirectTo: window.location.href, 
+        // Redirect to the app URL after login (works in both dev and production)
+        emailRedirectTo: redirectUrl, 
       },
     });
 
