@@ -41,10 +41,17 @@ const App: React.FC = () => {
   // 1. Check Env Vars (Gemini API Key)
   useEffect(() => {
     try {
+      // Vite replaces process.env.API_KEY with the actual value during build
+      // In production (Vercel), this will be the actual API key string
       if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
           setHasApiKey(true);
+      } else if (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) {
+          // Fallback to GEMINI_API_KEY if API_KEY is not set
+          setHasApiKey(true);
       }
-    } catch(e) {}
+    } catch(e) {
+      console.error('Error checking API key:', e);
+    }
   }, []);
 
   // 2. Auth Listener
