@@ -160,14 +160,6 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
           </div>
         </div>
       </div>
-          <p className={`text-2xl font-bold ${projectedSavings >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-            {formatCurrency(projectedSavings)}
-          </p>
-          <p className="text-xs text-slate-400 mt-2">
-            O que sobra se seguir o plano.
-          </p>
-        </div>
-      </div>
 
       {/* Comparison & List Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
