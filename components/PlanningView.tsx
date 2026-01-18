@@ -31,14 +31,17 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
   const monthlyBudget = savedBudgets.filter(b => b.month === currentMonth);
   const monthlyTransactions = transactions.filter(t => t.date.startsWith(currentMonth));
 
-  // Get all unique categories from transactions, budgets, and predefined list
+  // Track custom categories added in this session
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
+
+  // Get all unique categories from transactions, budgets, predefined list, and custom categories
   const allAvailableCategories = React.useMemo(() => {
     const transactionCategories = transactions.map(t => t.category);
     const budgetCategories = savedBudgets.map(b => b.category);
-    return Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories]))
+    return Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories, ...customCategories]))
       .filter(c => c !== 'Outros')
       .sort();
-  }, [transactions, savedBudgets]);
+  }, [transactions, savedBudgets, customCategories]);
 
   // Calculations
   const plannedIncome = monthlyBudget.filter(b => b.type === TransactionType.INCOME).reduce((acc, curr) => acc + curr.amount, 0);
@@ -287,8 +290,11 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
                       <button
                         onClick={() => {
                           if (customCategory.trim()) {
-                            setNewItem({...newItem, category: customCategory.trim()});
+                            const newCat = customCategory.trim();
+                            setCustomCategories(prev => [...prev, newCat]);
+                            setNewItem({...newItem, category: newCat});
                             setShowNewCategoryInput(false);
+                            setCustomCategory('');
                           }
                         }}
                         className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
