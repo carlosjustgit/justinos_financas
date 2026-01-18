@@ -32,10 +32,14 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
   // Calculations
   const plannedIncome = monthlyBudget.filter(b => b.type === TransactionType.INCOME).reduce((acc, curr) => acc + curr.amount, 0);
   const plannedExpense = monthlyBudget.filter(b => b.type === TransactionType.EXPENSE).reduce((acc, curr) => acc + curr.amount, 0);
-  const projectedSavings = plannedIncome - plannedExpense;
+  const plannedSavings = monthlyBudget.filter(b => b.type === TransactionType.SAVINGS).reduce((acc, curr) => acc + curr.amount, 0);
+  const plannedInvestments = monthlyBudget.filter(b => b.type === TransactionType.INVESTMENT).reduce((acc, curr) => acc + curr.amount, 0);
+  const projectedAvailable = plannedIncome - plannedExpense - plannedSavings - plannedInvestments;
 
   const actualIncome = monthlyTransactions.filter(t => t.type === TransactionType.INCOME).reduce((acc, curr) => acc + curr.amount, 0);
   const actualExpense = monthlyTransactions.filter(t => t.type === TransactionType.EXPENSE).reduce((acc, curr) => acc + curr.amount, 0);
+  const actualSavings = monthlyTransactions.filter(t => t.type === TransactionType.SAVINGS).reduce((acc, curr) => acc + curr.amount, 0);
+  const actualInvestments = monthlyTransactions.filter(t => t.type === TransactionType.INVESTMENT).reduce((acc, curr) => acc + curr.amount, 0);
 
   // Helper to change month
   const changeMonth = (offset: number) => {
@@ -115,34 +119,47 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-5 rounded-xl shadow-lg shadow-blue-200">
-          <div className="flex items-center gap-2 mb-2 opacity-90">
-            <Target className="w-4 h-4" />
-            <span className="text-sm font-medium">Receitas Planeadas</span>
-          </div>
-          <p className="text-2xl font-bold">{formatCurrency(plannedIncome)}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-5 rounded-xl shadow-lg">
+          <span className="text-xs font-medium opacity-90">Receitas</span>
+          <p className="text-2xl font-bold mt-1">{formatCurrency(plannedIncome)}</p>
           <div className="mt-2 text-xs bg-white/20 px-2 py-1 rounded inline-block">
             Real: {formatCurrency(actualIncome)}
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-rose-500 to-rose-600 text-white p-5 rounded-xl shadow-lg shadow-rose-200">
-           <div className="flex items-center gap-2 mb-2 opacity-90">
-            <AlertCircle className="w-4 h-4" />
-            <span className="text-sm font-medium">Despesas Planeadas</span>
-          </div>
-          <p className="text-2xl font-bold">{formatCurrency(plannedExpense)}</p>
-           <div className="mt-2 text-xs bg-white/20 px-2 py-1 rounded inline-block">
+        <div className="bg-gradient-to-br from-rose-500 to-rose-600 text-white p-5 rounded-xl shadow-lg">
+          <span className="text-xs font-medium opacity-90">Despesas</span>
+          <p className="text-2xl font-bold mt-1">{formatCurrency(plannedExpense)}</p>
+          <div className="mt-2 text-xs bg-white/20 px-2 py-1 rounded inline-block">
             Real: {formatCurrency(actualExpense)}
           </div>
         </div>
 
-        <div className={`p-5 rounded-xl shadow-sm border border-slate-200 ${projectedSavings >= 0 ? 'bg-white' : 'bg-red-50'}`}>
-           <div className="flex items-center gap-2 mb-2 text-slate-500">
-            <PiggyBank className="w-4 h-4" />
-            <span className="text-sm font-medium">Poupança Projetada</span>
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-5 rounded-xl shadow-lg">
+          <span className="text-xs font-medium opacity-90">Poupanças</span>
+          <p className="text-2xl font-bold mt-1">{formatCurrency(plannedSavings)}</p>
+          <div className="mt-2 text-xs bg-white/20 px-2 py-1 rounded inline-block">
+            Real: {formatCurrency(actualSavings)}
           </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-5 rounded-xl shadow-lg">
+          <span className="text-xs font-medium opacity-90">Investimentos</span>
+          <p className="text-2xl font-bold mt-1">{formatCurrency(plannedInvestments)}</p>
+          <div className="mt-2 text-xs bg-white/20 px-2 py-1 rounded inline-block">
+            Real: {formatCurrency(actualInvestments)}
+          </div>
+        </div>
+
+        <div className={`p-5 rounded-xl shadow-lg ${projectedAvailable >= 0 ? 'bg-slate-800 text-white' : 'bg-red-600 text-white'}`}>
+          <span className="text-xs font-medium opacity-90">Disponível</span>
+          <p className="text-2xl font-bold mt-1">{formatCurrency(projectedAvailable)}</p>
+          <div className="mt-2 text-xs bg-white/20 px-2 py-1 rounded inline-block">
+            {projectedAvailable >= 0 ? '✓ Positivo' : '⚠️ Negativo'}
+          </div>
+        </div>
+      </div>
           <p className={`text-2xl font-bold ${projectedSavings >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
             {formatCurrency(projectedSavings)}
           </p>

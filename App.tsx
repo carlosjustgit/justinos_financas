@@ -468,19 +468,15 @@ const App: React.FC = () => {
         <div className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
           <div className="max-w-7xl mx-auto">
             {activeView === View.DASHBOARD && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <Dashboard transactions={transactions} />
-                </div>
-                <div className="lg:col-span-1">
-                  <GoalsWidget 
-                    goals={goals}
-                    onAddGoal={(goal) => setGoals([...goals, goal])}
-                    onDeleteGoal={(id) => setGoals(goals.filter(g => g.id !== id))}
-                    totalSavings={transactions.filter(t => t.type === 'Poupança').reduce((acc, t) => acc + t.amount, 0)}
-                    monthlyIncome={transactions.filter(t => t.type === 'Receita').reduce((acc, t) => acc + t.amount, 0)}
-                  />
-                </div>
+              <div className="space-y-6">
+                <Dashboard transactions={transactions} />
+                <GoalsWidget 
+                  goals={goals}
+                  onAddGoal={(goal) => setGoals([...goals, goal])}
+                  onDeleteGoal={(id) => setGoals(goals.filter(g => g.id !== id))}
+                  totalSavings={transactions.filter(t => t.type === 'Poupança').reduce((acc, t) => acc + t.amount, 0)}
+                  monthlyIncome={transactions.filter(t => t.type === 'Receita').reduce((acc, t) => acc + t.amount, 0)}
+                />
               </div>
             )}
             {activeView === View.TRANSACTIONS && <TransactionList transactions={transactions} onDelete={handleDelete} />}

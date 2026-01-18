@@ -10,6 +10,7 @@ interface TransactionListProps {
 const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMember, setFilterMember] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState(new Date());
   
   const selectedMonth = selectedDate.toISOString().slice(0, 7); // YYYY-MM
@@ -19,8 +20,9 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelet
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           t.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesMember = filterMember === 'all' || t.member === filterMember;
+    const matchesType = filterType === 'all' || t.type === filterType;
     const matchesMonth = t.date.startsWith(selectedMonth);
-    return matchesSearch && matchesMember && matchesMonth;
+    return matchesSearch && matchesMember && matchesType && matchesMonth;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   const goToPreviousMonth = () => {
@@ -106,6 +108,19 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelet
           </div>
           
           <div className="relative">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none appearance-none bg-white cursor-pointer"
+            >
+              <option value="all">Todos Tipos</option>
+              {Object.values(TransactionType).map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="relative">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
                 <Filter className="w-4 h-4 text-gray-400" />
             </div>
@@ -114,7 +129,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelet
               onChange={(e) => setFilterMember(e.target.value)}
               className="pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none appearance-none bg-white cursor-pointer"
             >
-              <option value="all">Todos</option>
+              <option value="all">Todos Membros</option>
               {Object.values(FamilyMember).map(m => (
                 <option key={m} value={m}>{m}</option>
               ))}
