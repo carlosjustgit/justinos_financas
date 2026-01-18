@@ -21,6 +21,9 @@ export default defineConfig(({ mode }) => {
         host: '0.0.0.0',
       },
       plugins: [react()],
+      build: {
+        target: 'esnext',
+      },
       define: {
         'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(geminiKey),
         'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
