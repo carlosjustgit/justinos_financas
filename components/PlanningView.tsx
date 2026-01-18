@@ -264,8 +264,10 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
                     value={newItem.type}
                     onChange={e => setNewItem({...newItem, type: e.target.value as TransactionType})}
                   >
-                    <option value={TransactionType.EXPENSE}>Despesa</option>
                     <option value={TransactionType.INCOME}>Receita</option>
+                    <option value={TransactionType.EXPENSE}>Despesa</option>
+                    <option value={TransactionType.SAVING}>Poupança</option>
+                    <option value={TransactionType.INVESTMENT}>Investimento</option>
                   </select>
                 </div>
               </div>
