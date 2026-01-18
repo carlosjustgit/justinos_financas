@@ -13,12 +13,37 @@ if (!supabaseUrl || !supabaseKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
+// --- Helper Functions ---
+
+// Get user's household ID
+export const getUserHouseholdId = async (): Promise<string | null> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from('household_members')
+    .select('household_id')
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching household:', error);
+    return null;
+  }
+
+  return data?.household_id || null;
+};
+
 // --- Transactions API ---
 
 export const fetchTransactions = async (): Promise<Transaction[]> => {
+  const householdId = await getUserHouseholdId();
+  if (!householdId) return [];
+
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
+    .eq('household_id', householdId)
     .order('date', { ascending: false });
 
   if (error) {
@@ -34,9 +59,12 @@ export const addTransactionDb = async (transaction: Transaction) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not logged in");
 
+  const householdId = await getUserHouseholdId();
+  if (!householdId) throw new Error("User not in a household");
+
   const { error } = await supabase
     .from('transactions')
-    .insert([{ ...rest, id, user_id: user.id }]);
+    .insert([{ ...rest, id, user_id: user.id, household_id: householdId }]);
 
   if (error) throw error;
 };
@@ -56,9 +84,12 @@ export const updateTransactionDb = async (transaction: Transaction) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not logged in");
 
+  const householdId = await getUserHouseholdId();
+  if (!householdId) throw new Error("User not in a household");
+
   const { error } = await supabase
     .from('transactions')
-    .update({ ...rest, user_id: user.id })
+    .update({ ...rest, user_id: user.id, household_id: householdId })
     .eq('id', id);
 
   if (error) throw error;
@@ -68,10 +99,14 @@ export const addBatchTransactionsDb = async (transactions: Transaction[]) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not logged in");
 
+  const householdId = await getUserHouseholdId();
+  if (!householdId) throw new Error("User not in a household");
+
   const records = transactions.map(({ id, ...rest }) => ({
     ...rest,
     id,
-    user_id: user.id
+    user_id: user.id,
+    household_id: householdId
   }));
 
   const { error } = await supabase
@@ -84,9 +119,13 @@ export const addBatchTransactionsDb = async (transactions: Transaction[]) => {
 // --- Budget API ---
 
 export const fetchBudgetItems = async (): Promise<BudgetItem[]> => {
+  const householdId = await getUserHouseholdId();
+  if (!householdId) return [];
+
   const { data, error } = await supabase
     .from('budget_items')
-    .select('*');
+    .select('*')
+    .eq('household_id', householdId);
 
   if (error) {
     console.error('Error fetching budget:', error);
@@ -103,11 +142,15 @@ export const saveBudgetItemsDb = async (items: BudgetItem[]) => {
    const { data: { user } } = await supabase.auth.getUser();
    if (!user) throw new Error("User not logged in");
 
+   const householdId = await getUserHouseholdId();
+   if (!householdId) throw new Error("User not in a household");
+
    const records = items.map(({ id, isRecurring, ...rest }) => ({
      ...rest,
      id,
      is_recurring: isRecurring,
-     user_id: user.id
+     user_id: user.id,
+     household_id: householdId
    }));
 
    const { error } = await supabase
