@@ -18,10 +18,6 @@ enum View {
 }
 
 const App: React.FC = () => {
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:20',message:'App component executing',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-  // #endregion
-
   // Auth State
   const [session, setSession] = useState<any>(null);
   const [email, setEmail] = useState('');
@@ -43,79 +39,16 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 1. Check Env Vars (Gemini API Key)
-  // Vite replaces process.env.API_KEY during build with JSON.stringify(value)
-  // After build: if exists = "AIzaSy..." (actual string), if empty = "" (empty string)
-  
-  // IMPORTANT: Access process.env directly - Vite will replace it during build
-  // After build, this becomes a literal string in the compiled code
-  // Vite replaces process.env.API_KEY with JSON.stringify(value) during build
-  // So if the env var exists, it becomes "AIzaSy..." (the actual string)
-  // If it doesn't exist, it becomes "" (empty string)
-  
-  // Try multiple ways to access the key (Vite should replace all of these)
-  const GEMINI_API_KEY_1 = (typeof process !== 'undefined' && process.env && process.env.API_KEY) || '';
-  const GEMINI_API_KEY_2 = (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) || '';
-  // Use the first non-empty one
-  const GEMINI_API_KEY = GEMINI_API_KEY_1 || GEMINI_API_KEY_2;
-  
-  // #region agent log
-  // Log the actual value that Vite injected (this will be a literal string after build)
-  fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:56',message:'GEMINI_API_KEY after Vite replacement',data:{value:GEMINI_API_KEY,value1:GEMINI_API_KEY_1,value2:GEMINI_API_KEY_2,type:typeof GEMINI_API_KEY,length:GEMINI_API_KEY?.length,isString:typeof GEMINI_API_KEY === 'string',isEmpty:GEMINI_API_KEY === '',firstChars:GEMINI_API_KEY?.substring(0,20)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
-  
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:47',message:'GEMINI_API_KEY value after Vite replacement',data:{value:GEMINI_API_KEY,type:typeof GEMINI_API_KEY,length:GEMINI_API_KEY?.length,processExists:typeof process !== 'undefined',processEnvExists:typeof process !== 'undefined' && !!process.env},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-  // #endregion
+  // Vite substitui process.env.API_KEY durante o build com o valor literal
+  // Não precisa de verificações de typeof - o Vite faz isso no build time
+  const GEMINI_API_KEY = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
   
   useEffect(() => {
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:50',message:'useEffect executing',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-
-    console.log('🔍 Checking API Key...');
-    console.log('GEMINI_API_KEY value:', GEMINI_API_KEY);
-    console.log('GEMINI_API_KEY type:', typeof GEMINI_API_KEY);
-    console.log('GEMINI_API_KEY length:', GEMINI_API_KEY?.length);
-    console.log('process exists:', typeof process !== 'undefined');
-    console.log('process.env exists:', typeof process !== 'undefined' && process.env);
-    
-    // After Vite build, process.env.API_KEY is replaced with the JSON.stringify'd value
-    // JSON.stringify("AIzaSy...") = "AIzaSy..." (the actual key as a string)
-    // JSON.stringify("") = "" (empty string, 0 length)
     const apiKeyValue = GEMINI_API_KEY;
-    
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:65',message:'apiKeyValue before check',data:{value:apiKeyValue,type:typeof apiKeyValue,length:apiKeyValue?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-
-    const hasKey = apiKeyValue && 
-                   typeof apiKeyValue === 'string' && 
-                   apiKeyValue.length > 0 &&
-                   apiKeyValue !== 'undefined' &&
-                   apiKeyValue !== 'null';
-    
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:72',message:'hasKey check result',data:{hasKey,apiKeyValue,type:typeof apiKeyValue,length:apiKeyValue?.length,isEmpty:apiKeyValue === '',isUndefined:apiKeyValue === 'undefined'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
+    const hasKey = apiKeyValue && apiKeyValue.length > 10;
     
     if (hasKey) {
-      console.log('✅ API Key detected! Length:', apiKeyValue.length);
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:75',message:'API key detected branch',data:{length:apiKeyValue.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       setHasApiKey(true);
-    } else {
-      console.error('❌ API Key NOT found!', {
-        value: apiKeyValue,
-        type: typeof apiKeyValue,
-        length: apiKeyValue?.length,
-        isString: typeof apiKeyValue === 'string',
-        isEmpty: apiKeyValue === '',
-        isUndefined: apiKeyValue === 'undefined'
-      });
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:84',message:'API key NOT found branch',data:{value:apiKeyValue,type:typeof apiKeyValue,length:apiKeyValue?.length,isEmpty:apiKeyValue === '',isUndefined:apiKeyValue === 'undefined'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
     }
   }, []);
 
@@ -371,48 +304,14 @@ const App: React.FC = () => {
 
   // --- Main App ---
   
-  // Check API key directly (not via state) - Vite replaces process.env.API_KEY during build
-  // After build: if exists = "AIzaSy..." (actual string), if empty = "" (empty string)
+  // Verifica diretamente o valor da constante (já substituída pelo Vite)
   const checkEnv = () => {
-      try {
-          // Check GEMINI_API_KEY directly - it's already replaced by Vite during build
-          const apiKey = GEMINI_API_KEY;
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:368',message:'checkEnv - raw apiKey value',data:{apiKey,type:typeof apiKey,length:apiKey?.length,isEmpty:apiKey === '',isUndefined:apiKey === 'undefined',isNull:apiKey === 'null',firstChars:apiKey?.substring(0,20)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
-          
-          const hasKey = apiKey && 
-                        typeof apiKey === 'string' && 
-                        apiKey.length > 0 &&
-                        apiKey !== 'undefined' &&
-                        apiKey !== 'null';
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:378',message:'checkEnv - hasKey result',data:{hasKey,apiKey,type:typeof apiKey,length:apiKey?.length,checks:{hasValue:!!apiKey,isString:typeof apiKey === 'string',hasLength:apiKey?.length > 0,notUndefined:apiKey !== 'undefined',notNull:apiKey !== 'null'}},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
-          
-          // Only show error if we're in production AND don't have the key
-          const shouldShowError = !hasKey && (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'development');
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:386',message:'checkEnv - shouldShowError result',data:{shouldShowError,hasKey,processExists:typeof process !== 'undefined',processEnvExists:typeof process !== 'undefined' && !!process.env,nodeEnv:typeof process !== 'undefined' && process.env ? process.env.NODE_ENV : 'undefined'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-          // #endregion
-          
-          return shouldShowError;
-      } catch (e) {
-          // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:392',message:'checkEnv error',data:{error:String(e),stack:e instanceof Error ? e.stack : 'no stack'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-          // #endregion
-          // If there's an error checking, assume we need the key (safer)
-          return !hasApiKey;
-      }
+      const apiKey = GEMINI_API_KEY;
+      // Se a chave existe e tem mais de 10 caracteres, consideramos válida
+      return !apiKey || apiKey.length < 10;
   }
 
   if (checkEnv()) {
-      // #region agent log
-      fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:381',message:'Showing API key error screen',data:{GEMINI_API_KEY,hasApiKey},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       return (
         <div className="flex flex-col items-center justify-center h-screen bg-slate-50 text-slate-500 p-4 text-center">
             <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md">
@@ -424,6 +323,7 @@ const App: React.FC = () => {
                 <div className="text-xs bg-slate-100 p-3 rounded text-left font-mono">
                     API_KEY=sua_chave_google_gemini
                 </div>
+                <p className="text-xs text-gray-500 mt-2">Debug: {GEMINI_API_KEY?.substring(0, 20) || 'empty'}</p>
             </div>
         </div>
       );
