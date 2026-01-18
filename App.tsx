@@ -40,25 +40,35 @@ const App: React.FC = () => {
 
   // 1. Check Env Vars (Gemini API Key)
   // Vite replaces process.env.API_KEY during build with JSON.stringify(value)
-  // So if the env var exists, it will be a string like "AIzaSy..."
-  // If it doesn't exist, it will be "" (empty string)
-  const GEMINI_API_KEY = (typeof process !== 'undefined' && process.env && (process.env.API_KEY || process.env.GEMINI_API_KEY)) || '';
+  // After build: if exists = "AIzaSy..." (actual string), if empty = "" (empty string)
+  const GEMINI_API_KEY = typeof process !== 'undefined' && process.env 
+    ? (process.env.API_KEY || process.env.GEMINI_API_KEY || '') 
+    : '';
   
   useEffect(() => {
-    // After Vite build, GEMINI_API_KEY is replaced with JSON.stringify(value)
-    // If env var exists: JSON.stringify("AIzaSy...") becomes "AIzaSy..." (40+ chars)
-    // If env var is empty: JSON.stringify("") becomes "" (2 chars - just quotes)
-    // So we check if length > 2 (more than just the quotes)
-    const hasKey = typeof GEMINI_API_KEY === 'string' && 
-                   GEMINI_API_KEY.length > 2;
+    // After Vite build, process.env.API_KEY is replaced with the JSON.stringify'd value
+    // JSON.stringify("AIzaSy...") = "AIzaSy..." (the actual key as a string)
+    // JSON.stringify("") = "" (empty string, 0 length)
+    // So we check if it's a non-empty string
+    const apiKeyValue = GEMINI_API_KEY;
+    const hasKey = apiKeyValue && 
+                   typeof apiKeyValue === 'string' && 
+                   apiKeyValue.length > 0 &&
+                   apiKeyValue !== 'undefined' &&
+                   apiKeyValue !== 'null';
     
     if (hasKey) {
-      console.log('API Key detected');
+      console.log('✅ API Key detected, length:', apiKeyValue.length);
       setHasApiKey(true);
     } else {
-      console.warn('API Key not found. Value:', GEMINI_API_KEY, 'Length:', GEMINI_API_KEY?.length);
+      console.error('❌ API Key NOT found!', {
+        value: apiKeyValue,
+        type: typeof apiKeyValue,
+        length: apiKeyValue?.length,
+        isString: typeof apiKeyValue === 'string'
+      });
     }
-  }, []);
+  }, [GEMINI_API_KEY]);
 
   // 2. Auth Listener
   useEffect(() => {
