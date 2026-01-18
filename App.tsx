@@ -33,7 +33,6 @@ const App: React.FC = () => {
   // Modals
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState(false);
   
   // Settings/Backup State
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -48,11 +47,8 @@ const App: React.FC = () => {
     firstChars: GEMINI_API_KEY?.substring(0, 15)
   });
 
-  useEffect(() => {
-    if (GEMINI_API_KEY && GEMINI_API_KEY.length > 10) {
-      setHasApiKey(true);
-    }
-  }, [GEMINI_API_KEY]);
+  // Simplificação: remover o useEffect e state, verificar direto
+  const apiKeyIsValid = GEMINI_API_KEY && GEMINI_API_KEY.length > 10;
 
   // 2. Auth Listener
   useEffect(() => {
@@ -307,7 +303,8 @@ const App: React.FC = () => {
   // --- Main App ---
   
   const checkEnv = () => {
-      return !GEMINI_API_KEY || GEMINI_API_KEY.length < 10;
+      console.log('⚠️ checkEnv chamado, apiKeyIsValid:', apiKeyIsValid);
+      return !apiKeyIsValid;
   }
 
   if (checkEnv()) {
