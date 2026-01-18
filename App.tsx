@@ -48,7 +48,15 @@ const App: React.FC = () => {
   
   // IMPORTANT: Access process.env directly - Vite will replace it during build
   // After build, this becomes a literal string in the compiled code
+  // Vite replaces process.env.API_KEY with JSON.stringify(value) during build
+  // So if the env var exists, it becomes "AIzaSy..." (the actual string)
+  // If it doesn't exist, it becomes "" (empty string)
   const GEMINI_API_KEY = (typeof process !== 'undefined' && process.env && process.env.API_KEY) || '';
+  
+  // #region agent log
+  // Log the actual value that Vite injected (this will be a literal string after build)
+  fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:51',message:'GEMINI_API_KEY after Vite replacement',data:{value:GEMINI_API_KEY,type:typeof GEMINI_API_KEY,length:GEMINI_API_KEY?.length,isString:typeof GEMINI_API_KEY === 'string',isEmpty:GEMINI_API_KEY === '',firstChars:GEMINI_API_KEY?.substring(0,20)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
   
   // #region agent log
   fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:47',message:'GEMINI_API_KEY value after Vite replacement',data:{value:GEMINI_API_KEY,type:typeof GEMINI_API_KEY,length:GEMINI_API_KEY?.length,processExists:typeof process !== 'undefined',processEnvExists:typeof process !== 'undefined' && !!process.env},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
@@ -364,6 +372,11 @@ const App: React.FC = () => {
       try {
           // Check GEMINI_API_KEY directly - it's already replaced by Vite during build
           const apiKey = GEMINI_API_KEY;
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:368',message:'checkEnv - raw apiKey value',data:{apiKey,type:typeof apiKey,length:apiKey?.length,isEmpty:apiKey === '',isUndefined:apiKey === 'undefined',isNull:apiKey === 'null',firstChars:apiKey?.substring(0,20)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          
           const hasKey = apiKey && 
                         typeof apiKey === 'string' && 
                         apiKey.length > 0 &&
@@ -371,14 +384,20 @@ const App: React.FC = () => {
                         apiKey !== 'null';
           
           // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:361',message:'checkEnv executing',data:{hasKey,apiKey,type:typeof apiKey,length:apiKey?.length,hasApiKeyState:hasApiKey},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:378',message:'checkEnv - hasKey result',data:{hasKey,apiKey,type:typeof apiKey,length:apiKey?.length,checks:{hasValue:!!apiKey,isString:typeof apiKey === 'string',hasLength:apiKey?.length > 0,notUndefined:apiKey !== 'undefined',notNull:apiKey !== 'null'}},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
           // #endregion
           
           // Only show error if we're in production AND don't have the key
-          return !hasKey && (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'development');
+          const shouldShowError = !hasKey && (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'development');
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:386',message:'checkEnv - shouldShowError result',data:{shouldShowError,hasKey,processExists:typeof process !== 'undefined',processEnvExists:typeof process !== 'undefined' && !!process.env,nodeEnv:typeof process !== 'undefined' && process.env ? process.env.NODE_ENV : 'undefined'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          
+          return shouldShowError;
       } catch (e) {
           // #region agent log
-          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:373',message:'checkEnv error',data:{error:String(e)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:392',message:'checkEnv error',data:{error:String(e),stack:e instanceof Error ? e.stack : 'no stack'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
           // #endregion
           // If there's an error checking, assume we need the key (safer)
           return !hasApiKey;

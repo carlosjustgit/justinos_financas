@@ -36,10 +36,13 @@ export default defineConfig(({ mode }) => {
       define: {
         // Use JSON.stringify to ensure it's always a string
         // Empty string becomes "" (2 chars), actual key becomes "AIzaSy..." (40+ chars)
-        'process.env.API_KEY': JSON.stringify(geminiKey),
-        'process.env.GEMINI_API_KEY': JSON.stringify(geminiKey),
-        'process.env.SUPABASE_URL': JSON.stringify(supabaseUrl),
-        'process.env.SUPABASE_ANON_KEY': JSON.stringify(supabaseKey)
+        // IMPORTANT: These must match EXACTLY what's in the code (including quotes)
+        'process.env.API_KEY': JSON.stringify(geminiKey || ''),
+        'process.env.GEMINI_API_KEY': JSON.stringify(geminiKey || ''),
+        'process.env.SUPABASE_URL': JSON.stringify(supabaseUrl || ''),
+        'process.env.SUPABASE_ANON_KEY': JSON.stringify(supabaseKey || ''),
+        // Also try without quotes for direct access
+        'import.meta.env.VITE_GEMINI_API_KEY': JSON.stringify(geminiKey || '')
       },
       resolve: {
         alias: {
