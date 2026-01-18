@@ -93,25 +93,34 @@ const App: React.FC = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthLoading(true);
+    setAuthMessage('');
     
-    // Use origin para garantir que funciona tanto em dev quanto em produção
-    // Se estiver em produção (não localhost), usa a URL de produção
-    // Se estiver em dev, usa localhost
-    const redirectUrl = window.location.origin;
-    
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        // Redirect to the app URL after login (works in both dev and production)
-        emailRedirectTo: redirectUrl, 
-      },
-    });
-
-    if (error) {
-      setAuthMessage(error.message);
-    } else {
-      setAuthMessage('Verifique o seu email para o link de login!');
+    try {
+      if (isSignUp) {
+        // Registar novo usuário
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        
+        if (error) throw error;
+        setAuthMessage('Conta criada! Faz login agora.');
+        setIsSignUp(false);
+        setPassword('');
+      } else {
+        // Login
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (error) throw error;
+        setAuthMessage('Login efetuado com sucesso!');
+      }
+    } catch (error: any) {
+      setAuthMessage(error.message || 'Erro ao autenticar');
     }
+    
     setAuthLoading(false);
   };
 
@@ -283,17 +292,52 @@ const App: React.FC = () => {
                 className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white text-slate-900 placeholder:text-gray-400"
               />
             </div>
+            
+            <div className="text-left">
+              <label className="text-xs font-bold text-gray-500 uppercase ml-1">Password</label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white text-slate-900 placeholder:text-gray-400"
+              />
+            </div>
+            
             <button
+              type="submit"
               disabled={authLoading}
               className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              {authLoading ? 'A enviar...' : 'Entrar com Magic Link'}
+              {authLoading ? 'A processar...' : (isSignUp ? 'Criar Conta' : 'Entrar')}
               {!authLoading && <LogIn className="w-4 h-4" />}
+            </button>
+            
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setAuthMessage('');
+              }}
+              className="w-full text-gray-600 text-sm hover:text-emerald-600 transition"
+            >
+              {isSignUp ? 'Já tens conta? Faz login' : 'Não tens conta? Regista-te'}
             </button>
           </form>
           
           {authMessage && (
-            <div className={`mt-4 p-3 rounded-lg text-sm ${authMessage.includes('erro') ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-700'}`}>
+            <div className={`mt-4 p-3 rounded-lg text-sm flex items-center gap-2 ${
+              authMessage.includes('sucesso') || authMessage.includes('criada') 
+                ? 'bg-emerald-50 text-emerald-700' 
+                : 'bg-red-50 text-red-600'
+            }`}>
+              {authMessage.includes('sucesso') || authMessage.includes('criada') ? (
+                <CheckCircle2 className="w-4 h-4" />
+              ) : (
+                <AlertTriangle className="w-4 h-4" />
+              )}
               {authMessage}
             </div>
           )}
