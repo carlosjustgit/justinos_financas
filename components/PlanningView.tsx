@@ -74,6 +74,8 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
   const handleAddItem = () => {
     if (!newItem.description || !newItem.amount) return;
 
+    console.log('handleAddItem called with newItem:', newItem);
+
     const amount = parseFloat(newItem.amount);
     const newItems: BudgetItem[] = [];
 
@@ -84,7 +86,7 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
     for (let i = 0; i < loops; i++) {
       const monthStr = targetDate.toISOString().slice(0, 7);
       
-      newItems.push({
+      const itemToAdd = {
         id: generateId(),
         month: monthStr,
         description: newItem.description,
@@ -92,7 +94,10 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
         category: newItem.category,
         type: newItem.type,
         isRecurring: newItem.isRecurring
-      });
+      };
+      
+      console.log('Creating budget item:', itemToAdd);
+      newItems.push(itemToAdd);
 
       // Advance month
       targetDate.setMonth(targetDate.getMonth() + 1);
@@ -102,18 +107,23 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
     console.log('Current savedBudgets count:', savedBudgets.length);
     console.log('Will have after save:', savedBudgets.length + newItems.length);
     
-    onSaveBudgets([...savedBudgets, ...newItems]);
-    setIsFormOpen(false);
-    // Reset form completely
-    setNewItem({ 
-      description: '', 
-      amount: '', 
-      category: CATEGORIES[0],
-      type: TransactionType.EXPENSE,
-      isRecurring: false,
-      recurrenceCount: 12
-    });
-    setShowNewCategoryInput(false);
+    try {
+      onSaveBudgets([...savedBudgets, ...newItems]);
+      setIsFormOpen(false);
+      // Reset form completely
+      setNewItem({ 
+        description: '', 
+        amount: '', 
+        category: CATEGORIES[0],
+        type: TransactionType.EXPENSE,
+        isRecurring: false,
+        recurrenceCount: 12
+      });
+      setShowNewCategoryInput(false);
+      console.log('Budget item added successfully!');
+    } catch (error) {
+      console.error('Error adding budget item:', error);
+    }
   };
 
   const handleDeleteItem = (id: string) => {
