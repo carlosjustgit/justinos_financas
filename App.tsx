@@ -166,6 +166,19 @@ const App: React.FC = () => {
     }
   };
 
+  const handleUpdateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    try {
+      const transaction = transactions.find(t => t.id === id);
+      if (transaction) {
+        await updateTransactionDb({ ...transaction, ...updates });
+      }
+    } catch (e) {
+      console.error("Sync error", e);
+      loadData();
+    }
+  };
+
   const handleSaveBudget = async (items: BudgetItem[]) => {
     // Determine deleted items
     const currentIds = new Set(items.map(i => i.id));
@@ -479,7 +492,7 @@ const App: React.FC = () => {
                 />
               </div>
             )}
-            {activeView === View.TRANSACTIONS && <TransactionList transactions={transactions} onDelete={handleDelete} />}
+            {activeView === View.TRANSACTIONS && <TransactionList transactions={transactions} onDelete={handleDelete} onUpdate={handleUpdateTransaction} />}
             {activeView === View.PLANNING && (
               <PlanningView 
                 transactions={transactions} 

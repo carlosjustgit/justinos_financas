@@ -1,20 +1,27 @@
 import React, { useState } from 'react';
 import { Transaction, TransactionType, FamilyMember } from '../types';
-import { Search, Filter, Trash2, ArrowUpCircle, ArrowDownCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, Trash2, ArrowUpCircle, ArrowDownCircle, ChevronLeft, ChevronRight, Edit2, X } from 'lucide-react';
+import { CATEGORIES } from '../constants';
 
 interface TransactionListProps {
   transactions: Transaction[];
   onDelete: (id: string) => void;
+  onUpdate?: (id: string, updates: Partial<Transaction>) => void;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, onUpdate }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMember, setFilterMember] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [categorySearch, setCategorySearch] = useState('');
   
   const selectedMonth = selectedDate.toISOString().slice(0, 7); // YYYY-MM
   const isCurrentMonth = selectedMonth === new Date().toISOString().slice(0, 7);
+
+  // Get all unique categories from existing transactions + predefined ones
+  const allCategories = Array.from(new Set([...CATEGORIES, ...transactions.map(t => t.category)])).sort();
 
   const filteredTransactions = transactions.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -170,9 +177,16 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelet
                     {t.description}
                   </td>
                   <td className="px-6 py-4">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    <button 
+                      onClick={() => {
+                        setEditingCategoryId(t.id);
+                        setCategorySearch('');
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 hover:bg-emerald-100 hover:text-emerald-700 transition-colors cursor-pointer"
+                    >
                       {t.category}
-                    </span>
+                      <Edit2 className="w-3 h-3 opacity-50" />
+                    </button>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-500">
                     {t.member}
@@ -199,6 +213,66 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelet
         </table>
       </div>
     </div>
+
+    {/* Category Edit Modal */}
+    {editingCategoryId && onUpdate && (
+      <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[70vh] flex flex-col">
+          <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+            <h3 className="text-lg font-bold text-slate-800">Alterar Categoria</h3>
+            <button 
+              onClick={() => setEditingCategoryId(null)} 
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="p-4 border-b border-gray-100">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Pesquisar categoria..."
+                value={categorySearch}
+                onChange={(e) => setCategorySearch(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-2">
+            {allCategories
+              .filter(cat => cat.toLowerCase().includes(categorySearch.toLowerCase()))
+              .map(cat => {
+                const transaction = transactions.find(t => t.id === editingCategoryId);
+                const isSelected = transaction?.category === cat;
+                
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      onUpdate(editingCategoryId, { category: cat });
+                      setEditingCategoryId(null);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-colors ${
+                      isSelected 
+                        ? 'bg-emerald-100 text-emerald-700 font-medium' 
+                        : 'hover:bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                );
+              })}
+            {allCategories.filter(cat => cat.toLowerCase().includes(categorySearch.toLowerCase())).length === 0 && (
+              <p className="text-center text-gray-400 py-8 text-sm">Nenhuma categoria encontrada</p>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 };
