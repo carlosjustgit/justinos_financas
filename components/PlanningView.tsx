@@ -16,6 +16,8 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
   
   // Form State
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [showNewCategoryInput, setShowNewCategoryInput] = useState(false);
+  const [customCategory, setCustomCategory] = useState('');
   const [newItem, setNewItem] = useState({
     description: '',
     amount: '',
@@ -248,13 +250,53 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Categoria</label>
-                  <select 
-                    className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow cursor-pointer"
-                    value={newItem.category}
-                    onChange={e => setNewItem({...newItem, category: e.target.value})}
-                  >
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  {!showNewCategoryInput ? (
+                    <select 
+                      className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-shadow cursor-pointer"
+                      value={newItem.category}
+                      onChange={e => {
+                        if (e.target.value === '__new__') {
+                          setShowNewCategoryInput(true);
+                          setCustomCategory('');
+                        } else {
+                          setNewItem({...newItem, category: e.target.value});
+                        }
+                      }}
+                    >
+                      {CATEGORIES.filter(c => c !== 'Outros').map(c => <option key={c} value={c}>{c}</option>)}
+                      <option value="__new__">+ Nova Categoria</option>
+                    </select>
+                  ) : (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="Nome da nova categoria"
+                        value={customCategory}
+                        onChange={e => setCustomCategory(e.target.value)}
+                        className="flex-1 p-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
+                      />
+                      <button
+                        onClick={() => {
+                          if (customCategory.trim()) {
+                            setNewItem({...newItem, category: customCategory.trim()});
+                            setShowNewCategoryInput(false);
+                          }
+                        }}
+                        className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowNewCategoryInput(false);
+                          setNewItem({...newItem, category: CATEGORIES[0]});
+                        }}
+                        className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1">

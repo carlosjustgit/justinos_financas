@@ -113,8 +113,15 @@ export const parseBankStatement = async (text: string): Promise<Omit<Transaction
         date: { type: Type.STRING, description: "Date in YYYY-MM-DD format" },
         description: { type: Type.STRING },
         amount: { type: Type.NUMBER, description: "Absolute numeric value of the transaction" },
-        type: { type: Type.STRING, enum: [TransactionType.INCOME, TransactionType.EXPENSE] },
-        category: { type: Type.STRING, description: "Infer the category based on description (e.g., Supermercado, Transporte, Habitação)" }
+        type: { 
+          type: Type.STRING, 
+          enum: [TransactionType.INCOME, TransactionType.EXPENSE, TransactionType.SAVING, TransactionType.INVESTMENT],
+          description: "Income for salary/credits, Expense for normal spending, Saving for transfers to savings accounts, Investment for stock/crypto purchases"
+        },
+        category: { 
+          type: Type.STRING, 
+          description: "Infer the most specific category based on description. Common categories: Habitação, Supermercado, Restaurantes, Transporte, Saúde, Lazer, Educação, Serviços (Água/Luz/Net), Fundo Emergência, Férias, Casa, Ações, Fundos, Crypto, Salário. Use custom category names when transaction is very specific (e.g., 'Netflix', 'Ginásio', 'Dentista')." 
+        }
       },
       required: ["date", "description", "amount", "type", "category"]
     }
@@ -125,6 +132,20 @@ export const parseBankStatement = async (text: string): Promise<Omit<Transaction
     O contexto é Portugal.
     Hoje é ${today}. Se o ano não estiver explícito, assume o ano corrente ou o mais provável com base na data de hoje.
     Ignora cabeçalhos, rodapés ou saldos acumulados. Extrai apenas movimentos individuais.
+    
+    INSTRUÇÕES IMPORTANTES:
+    - Para o campo "type", usa:
+      * "Receita" para salários, ordenados, transferências recebidas
+      * "Despesa" para compras normais do dia-a-dia
+      * "Poupança" para transferências para contas poupança ou fundos de emergência
+      * "Investimento" para compras de ações, fundos, crypto, ou depósitos em contas de investimento
+    
+    - Para "category", sê o mais específico possível. Exemplos:
+      * Se vires "Netflix", usa "Netflix" (não "Serviços")
+      * Se vires "Pingo Doce", usa "Supermercado"
+      * Se vires "Galp", usa "Transporte"
+      * Se vires "Degiro" ou "Trading212", usa "Ações" e type "Investimento"
+      * Se vires "Revolut Savings", usa "Fundo Emergência" e type "Poupança"
     
     TEXTO DO EXTRATO:
     ${text}
