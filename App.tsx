@@ -21,6 +21,8 @@ const App: React.FC = () => {
   // Auth State
   const [session, setSession] = useState<any>(null);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
   const [authMessage, setAuthMessage] = useState('');
 
