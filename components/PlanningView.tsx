@@ -31,22 +31,26 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
   const monthlyBudget = savedBudgets.filter(b => b.month === currentMonth);
   const monthlyTransactions = transactions.filter(t => t.date.startsWith(currentMonth));
 
-  // Get all unique categories from transactions, budgets, and predefined list
+  // Track temporarily added categories (before saving)
+  const [tempCategories, setTempCategories] = useState<string[]>([]);
+
+  // Get all unique categories from transactions, budgets, predefined list + temp categories
   const allAvailableCategories = React.useMemo(() => {
     const transactionCategories = transactions.map(t => t.category);
     const budgetCategories = savedBudgets.map(b => b.category);
-    const allCats = Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories]))
+    const allCats = Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories, ...tempCategories]))
       .filter(c => c !== 'Outros')
       .sort();
     
     console.log('Available categories recalculated:', {
       total: allCats.length,
       fromBudgets: budgetCategories,
+      fromTemp: tempCategories,
       allCategories: allCats
     });
     
     return allCats;
-  }, [transactions, savedBudgets]);
+  }, [transactions, savedBudgets, tempCategories]);
 
   // Calculations
   const plannedIncome = monthlyBudget.filter(b => b.type === TransactionType.INCOME).reduce((acc, curr) => acc + curr.amount, 0);
@@ -319,9 +323,12 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
                         onClick={() => {
                           if (customCategory.trim()) {
                             const newCat = customCategory.trim();
+                            // Add to temp categories immediately so it appears in dropdown
+                            setTempCategories(prev => [...prev, newCat]);
                             setNewItem({...newItem, category: newCat});
                             setShowNewCategoryInput(false);
                             setCustomCategory('');
+                            console.log('Custom category added to temp list:', newCat);
                           }
                         }}
                         className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
