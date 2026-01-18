@@ -33,8 +33,8 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
         // Extrair texto de PDF
         const arrayBuffer = await file.arrayBuffer();
         
-        // Configure PDF.js worker
-        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`;
+        // Configure PDF.js worker - use jsdelivr instead
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.worker.min.mjs`;
         
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         let fullText = '';
