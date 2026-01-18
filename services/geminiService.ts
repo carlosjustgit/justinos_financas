@@ -2,15 +2,7 @@ import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { Transaction, TransactionType, FamilyMember } from "../types";
 
 const getApiKey = () => {
-  try {
-    // Check if process is defined to avoid ReferenceError in some browser environments
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-      return process.env.API_KEY;
-    }
-  } catch (e) {
-    console.error("Error accessing environment variables", e);
-  }
-  return undefined;
+  return import.meta.env.VITE_GEMINI_API_KEY;
 };
 
 const getClient = () => {

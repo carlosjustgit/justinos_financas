@@ -4,13 +4,8 @@ import { Transaction, BudgetItem } from '../types';
 // Configuração do Supabase
 // Usamos as variáveis de ambiente se existirem (boa prática para produção),
 // mas temos valores de fallback para que a app funcione imediatamente com o teu projeto.
-const supabaseUrl = (typeof process !== 'undefined' && process.env.SUPABASE_URL) 
-  ? process.env.SUPABASE_URL 
-  : 'https://veiktgexwjpycasjxrjv.supabase.co';
-
-const supabaseKey = (typeof process !== 'undefined' && process.env.SUPABASE_ANON_KEY)
-  ? process.env.SUPABASE_ANON_KEY 
-  : 'sb_publishable_Vw5KWK1cPJUurfJoBzg3Sw_0rWDchyM';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://veiktgexwjpycasjxrjv.supabase.co';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_Vw5KWK1cPJUurfJoBzg3Sw_0rWDchyM';
 
 if (!supabaseUrl || !supabaseKey) {
   console.error("Supabase credentials missing!");
