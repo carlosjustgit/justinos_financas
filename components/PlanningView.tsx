@@ -35,9 +35,17 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
   const allAvailableCategories = React.useMemo(() => {
     const transactionCategories = transactions.map(t => t.category);
     const budgetCategories = savedBudgets.map(b => b.category);
-    return Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories]))
+    const allCats = Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories]))
       .filter(c => c !== 'Outros')
       .sort();
+    
+    console.log('Available categories recalculated:', {
+      total: allCats.length,
+      fromBudgets: budgetCategories,
+      allCategories: allCats
+    });
+    
+    return allCats;
   }, [transactions, savedBudgets]);
 
   // Calculations
@@ -91,6 +99,9 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
     }
 
     console.log('Adding budget items with categories:', newItems.map(i => i.category));
+    console.log('Current savedBudgets count:', savedBudgets.length);
+    console.log('Will have after save:', savedBudgets.length + newItems.length);
+    
     onSaveBudgets([...savedBudgets, ...newItems]);
     setIsFormOpen(false);
     // Reset form completely
