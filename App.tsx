@@ -42,11 +42,13 @@ const App: React.FC = () => {
   // 1. Check Env Vars (Gemini API Key)
   const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
   
+  // Force new build with updated API key
   console.log('🔑 API KEY CHECK:', {
     value: GEMINI_API_KEY,
     length: GEMINI_API_KEY?.length,
     hasKey: !!GEMINI_API_KEY && GEMINI_API_KEY.length > 10,
-    firstChars: GEMINI_API_KEY?.substring(0, 15)
+    firstChars: GEMINI_API_KEY?.substring(0, 15),
+    buildTime: new Date().toISOString()
   });
 
   // Simplificação: remover o useEffect e state, verificar direto
