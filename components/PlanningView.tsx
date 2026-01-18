@@ -93,7 +93,15 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
     console.log('Adding budget items with categories:', newItems.map(i => i.category));
     onSaveBudgets([...savedBudgets, ...newItems]);
     setIsFormOpen(false);
-    setNewItem({ ...newItem, description: '', amount: '' });
+    // Reset form completely
+    setNewItem({ 
+      description: '', 
+      amount: '', 
+      category: CATEGORIES[0],
+      type: TransactionType.EXPENSE,
+      isRecurring: false,
+      recurrenceCount: 12
+    });
     setShowNewCategoryInput(false);
   };
 
