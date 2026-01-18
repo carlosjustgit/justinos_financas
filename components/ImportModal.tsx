@@ -3,6 +3,7 @@ import { parseBankStatement } from '../services/geminiService';
 import { Transaction, TransactionType, FamilyMember } from '../types';
 import { generateId } from '../utils';
 import { X, Upload, FileText, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import * as pdfjsLib from 'pdfjs-dist';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -24,12 +25,44 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const content = event.target?.result as string;
-      setText(content);
-    };
-    reader.readAsText(file);
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (file.type === 'application/pdf') {
+        // Extrair texto de PDF
+        const arrayBuffer = await file.arrayBuffer();
+        
+        // Configure PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.js`;
+        
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let fullText = '';
+        
+        // Extrair texto de todas as páginas
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items.map((item: any) => item.str).join(' ');
+          fullText += pageText + '\n';
+        }
+        
+        setText(fullText);
+      } else {
+        // Ler como texto (CSV, TXT)
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const content = event.target?.result as string;
+          setText(content);
+        };
+        reader.readAsText(file);
+      }
+    } catch (err) {
+      setError('Erro ao processar o ficheiro. Tenta novamente.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleProcess = async () => {
@@ -136,8 +169,8 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
           <div className="border-2 border-dashed border-gray-200 rounded-lg p-4 bg-gray-50 hover:bg-white hover:border-emerald-300 transition-colors">
              <label className="flex flex-col items-center justify-center cursor-pointer">
                 <FileText className="w-8 h-8 text-gray-400 mb-2" />
-                <span className="text-sm font-medium text-gray-600">Carregar ficheiro (.txt, .csv)</span>
-                <input type="file" accept=".txt,.csv" onChange={handleFileUpload} className="hidden" />
+                <span className="text-sm font-medium text-gray-600">Carregar ficheiro (.txt, .csv, .pdf)</span>
+                <input type="file" accept=".txt,.csv,.pdf,application/pdf" onChange={handleFileUpload} className="hidden" />
              </label>
           </div>
 
