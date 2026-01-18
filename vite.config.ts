@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     
     // Prioritize process.env (Vercel) over .env files (local dev)
+    // In Vercel, process.env has the variables directly during build
     const geminiKey = process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || '';
     const supabaseUrl = process.env.SUPABASE_URL || env.SUPABASE_URL || '';
     const supabaseKey = process.env.SUPABASE_ANON_KEY || env.SUPABASE_ANON_KEY || '';
@@ -16,11 +17,16 @@ export default defineConfig(({ mode }) => {
     if (process.env.VERCEL) {
       console.log('Build env vars:', {
         hasGeminiKey: !!geminiKey,
+        geminiKeyLength: geminiKey?.length || 0,
+        geminiKeyPreview: geminiKey ? geminiKey.substring(0, 10) + '...' : 'empty',
         hasSupabaseUrl: !!supabaseUrl,
         hasSupabaseKey: !!supabaseKey
       });
     }
     
+    // IMPORTANT: Vite replaces these during build
+    // If geminiKey is empty, it will be replaced with "" (empty string)
+    // If geminiKey has value, it will be replaced with the actual string
     return {
       server: {
         port: 3000,
@@ -28,10 +34,12 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(geminiKey || ''),
-        'process.env.GEMINI_API_KEY': JSON.stringify(geminiKey || ''),
-        'process.env.SUPABASE_URL': JSON.stringify(supabaseUrl || ''),
-        'process.env.SUPABASE_ANON_KEY': JSON.stringify(supabaseKey || '')
+        // Use JSON.stringify to ensure it's always a string
+        // Empty string becomes "" (2 chars), actual key becomes "AIzaSy..." (40+ chars)
+        'process.env.API_KEY': JSON.stringify(geminiKey),
+        'process.env.GEMINI_API_KEY': JSON.stringify(geminiKey),
+        'process.env.SUPABASE_URL': JSON.stringify(supabaseUrl),
+        'process.env.SUPABASE_ANON_KEY': JSON.stringify(supabaseKey)
       },
       resolve: {
         alias: {
