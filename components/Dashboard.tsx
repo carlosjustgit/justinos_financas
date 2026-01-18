@@ -55,7 +55,16 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     .filter(t => t.type === TransactionType.EXPENSE)
     .reduce((acc, curr) => acc + curr.amount, 0);
 
-  const balance = totalIncome - totalExpense;
+  const totalSavings = monthTransactions
+    .filter(t => t.type === TransactionType.SAVINGS)
+    .reduce((acc, curr) => acc + curr.amount, 0);
+
+  const totalInvestments = monthTransactions
+    .filter(t => t.type === TransactionType.INVESTMENT)
+    .reduce((acc, curr) => acc + curr.amount, 0);
+
+  const balance = totalIncome - totalExpense - totalSavings - totalInvestments;
+  const savingsRate = totalIncome > 0 ? ((totalSavings + totalInvestments) / totalIncome) * 100 : 0;
 
   // --- SUPERPOWER: Subscription Detective Logic ---
   // Detect recurring expenses (same description, similar amount, appearing > 1 time)
@@ -182,44 +191,70 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
       </div>
       
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-500 font-medium">Saldo Atual</h3>
-            <div className="p-2 bg-emerald-100 rounded-full">
-              <Wallet className="w-5 h-5 text-emerald-600" />
-            </div>
-          </div>
-          <p className={`text-3xl font-bold ${balance >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
-            {formatCurrency(balance)}
-          </p>
-          <p className="text-xs text-gray-400 mt-2">Saldo do mês</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-500 font-medium">Receitas</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-gray-500 font-medium text-sm">Receitas</h3>
             <div className="p-2 bg-blue-100 rounded-full">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
+              <TrendingUp className="w-4 h-4 text-blue-600" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-800">
+          <p className="text-2xl font-bold text-slate-800">
             {formatCurrency(totalIncome)}
           </p>
-          <p className="text-xs text-gray-400 mt-2">Total de entradas</p>
+          <p className="text-xs text-gray-400 mt-1">Entradas</p>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-500 font-medium">Despesas</h3>
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-gray-500 font-medium text-sm">Despesas</h3>
             <div className="p-2 bg-red-100 rounded-full">
-              <TrendingDown className="w-5 h-5 text-red-600" />
+              <TrendingDown className="w-4 h-4 text-red-600" />
             </div>
           </div>
-          <p className="text-3xl font-bold text-slate-800">
+          <p className="text-2xl font-bold text-slate-800">
             {formatCurrency(totalExpense)}
           </p>
-          <p className="text-xs text-gray-400 mt-2">Total de saídas</p>
+          <p className="text-xs text-gray-400 mt-1">Saídas</p>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-gray-500 font-medium text-sm">Poupanças</h3>
+            <div className="p-2 bg-emerald-100 rounded-full">
+              <span className="text-lg">🎯</span>
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-emerald-600">
+            {formatCurrency(totalSavings)}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">Guardado</p>
+        </div>
+
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-gray-500 font-medium text-sm">Investimentos</h3>
+            <div className="p-2 bg-purple-100 rounded-full">
+              <span className="text-lg">📈</span>
+            </div>
+          </div>
+          <p className="text-2xl font-bold text-purple-600">
+            {formatCurrency(totalInvestments)}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">Aplicado</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-slate-800 to-slate-700 p-5 rounded-xl shadow-lg flex flex-col justify-between text-white">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-medium text-sm opacity-90">Disponível</h3>
+            <div className="p-2 bg-white/20 rounded-full">
+              <Wallet className="w-4 h-4" />
+            </div>
+          </div>
+          <p className={`text-2xl font-bold ${balance >= 0 ? '' : 'text-red-300'}`}>
+            {formatCurrency(balance)}
+          </p>
+          <p className="text-xs opacity-75 mt-1">Taxa poupança: {savingsRate.toFixed(1)}%</p>
         </div>
       </div>
 
