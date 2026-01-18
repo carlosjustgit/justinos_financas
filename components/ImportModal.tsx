@@ -170,7 +170,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de extrato</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de conta</label>
             <div className="flex gap-3 flex-wrap">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -181,21 +181,30 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
                   onChange={(e) => setSelectedType(e.target.value)}
                   className="text-emerald-600 focus:ring-emerald-500"
                 />
-                <span className="text-sm text-gray-700">Automático (IA decide)</span>
+                <span className="text-sm text-gray-700">Conta Normal (dia-a-dia)</span>
               </label>
-              {Object.values(TransactionType).map((type) => (
-                <label key={type} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="type"
-                    value={type}
-                    checked={selectedType === type}
-                    onChange={(e) => setSelectedType(e.target.value)}
-                    className="text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <span className="text-sm text-gray-700">{type}</span>
-                </label>
-              ))}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="type"
+                  value={TransactionType.SAVING}
+                  checked={selectedType === TransactionType.SAVING}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="text-emerald-600 focus:ring-emerald-500"
+                />
+                <span className="text-sm text-gray-700">Conta Poupança</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="type"
+                  value={TransactionType.INVESTMENT}
+                  checked={selectedType === TransactionType.INVESTMENT}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="text-emerald-600 focus:ring-emerald-500"
+                />
+                <span className="text-sm text-gray-700">Conta Investimento</span>
+              </label>
             </div>
           </div>
 
