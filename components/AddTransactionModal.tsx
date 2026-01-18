@@ -9,9 +9,10 @@ interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (transaction: Transaction) => void;
+  existingTransactions?: Transaction[];
 }
 
-const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, onAdd }) => {
+const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, onAdd, existingTransactions = [] }) => {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
@@ -23,6 +24,12 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
   
   const [isScanning, setIsScanning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get all unique categories
+  const allCategories = React.useMemo(() => {
+    const transactionCategories = existingTransactions.map(t => t.category);
+    return Array.from(new Set([...CATEGORIES, ...transactionCategories])).sort();
+  }, [existingTransactions]);
 
   if (!isOpen) return null;
 
@@ -162,7 +169,7 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
                   onChange={e => setFormData({ ...formData, category: e.target.value })}
                   className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none cursor-pointer"
                 >
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
              </div>
              <div>

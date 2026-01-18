@@ -31,6 +31,15 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
   const monthlyBudget = savedBudgets.filter(b => b.month === currentMonth);
   const monthlyTransactions = transactions.filter(t => t.date.startsWith(currentMonth));
 
+  // Get all unique categories from transactions, budgets, and predefined list
+  const allAvailableCategories = React.useMemo(() => {
+    const transactionCategories = transactions.map(t => t.category);
+    const budgetCategories = savedBudgets.map(b => b.category);
+    return Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories]))
+      .filter(c => c !== 'Outros')
+      .sort();
+  }, [transactions, savedBudgets]);
+
   // Calculations
   const plannedIncome = monthlyBudget.filter(b => b.type === TransactionType.INCOME).reduce((acc, curr) => acc + curr.amount, 0);
   const plannedExpense = monthlyBudget.filter(b => b.type === TransactionType.EXPENSE).reduce((acc, curr) => acc + curr.amount, 0);
@@ -263,7 +272,7 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
                         }
                       }}
                     >
-                      {CATEGORIES.filter(c => c !== 'Outros').map(c => <option key={c} value={c}>{c}</option>)}
+                      {allAvailableCategories.map(c => <option key={c} value={c}>{c}</option>)}
                       <option value="__new__">+ Nova Categoria</option>
                     </select>
                   ) : (

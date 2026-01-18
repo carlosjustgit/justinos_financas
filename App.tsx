@@ -537,6 +537,7 @@ const App: React.FC = () => {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleManualAdd}
+        existingTransactions={transactions}
       />
     </div>
   );
