@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Transaction, TransactionType, FamilyMember } from '../types';
-import { Search, Filter, Trash2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { Search, Filter, Trash2, ArrowUpCircle, ArrowDownCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -10,13 +10,42 @@ interface TransactionListProps {
 const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMember, setFilterMember] = useState<string>('all');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  const selectedMonth = selectedDate.toISOString().slice(0, 7); // YYYY-MM
+  const isCurrentMonth = selectedMonth === new Date().toISOString().slice(0, 7);
 
   const filteredTransactions = transactions.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           t.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesMember = filterMember === 'all' || t.member === filterMember;
-    return matchesSearch && matchesMember;
+    const matchesMonth = t.date.startsWith(selectedMonth);
+    return matchesSearch && matchesMember && matchesMonth;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  const goToPreviousMonth = () => {
+    setSelectedDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() - 1);
+      return newDate;
+    });
+  };
+
+  const goToNextMonth = () => {
+    setSelectedDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() + 1);
+      return newDate;
+    });
+  };
+
+  const goToCurrentMonth = () => {
+    setSelectedDate(new Date());
+  };
+
+  const formatMonthYear = (date: Date) => {
+    return date.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+  };
 
   const formatCurrency = (val: number) => {
     return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(val);
@@ -27,7 +56,40 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelet
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+    <div className="space-y-4">
+      {/* Month Selector */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+        <button 
+          onClick={goToPreviousMonth}
+          className="p-2 hover:bg-slate-100 rounded-lg transition"
+        >
+          <ChevronLeft className="w-5 h-5 text-slate-600" />
+        </button>
+        
+        <div className="text-center">
+          <h2 className="text-lg font-bold text-slate-800 capitalize">
+            {formatMonthYear(selectedDate)}
+          </h2>
+          {!isCurrentMonth && (
+            <button 
+              onClick={goToCurrentMonth}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium mt-1"
+            >
+              Voltar ao mês atual
+            </button>
+          )}
+        </div>
+        
+        <button 
+          onClick={goToNextMonth}
+          className="p-2 hover:bg-slate-100 rounded-lg transition"
+        >
+          <ChevronRight className="w-5 h-5 text-slate-600" />
+        </button>
+      </div>
+
+      {/* Transactions Table */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row gap-4 justify-between items-center bg-white">
         <h3 className="text-lg font-bold text-slate-800">Histórico de Transações</h3>
         
@@ -118,6 +180,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelet
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   );
 };
