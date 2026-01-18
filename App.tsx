@@ -358,15 +358,37 @@ const App: React.FC = () => {
 
   // --- Main App ---
   
+  // Check API key directly (not via state) - Vite replaces process.env.API_KEY during build
+  // After build: if exists = "AIzaSy..." (actual string), if empty = "" (empty string)
   const checkEnv = () => {
       try {
-          return !hasApiKey && (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'development');
-      } catch {
+          // Check GEMINI_API_KEY directly - it's already replaced by Vite during build
+          const apiKey = GEMINI_API_KEY;
+          const hasKey = apiKey && 
+                        typeof apiKey === 'string' && 
+                        apiKey.length > 0 &&
+                        apiKey !== 'undefined' &&
+                        apiKey !== 'null';
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:361',message:'checkEnv executing',data:{hasKey,apiKey,type:typeof apiKey,length:apiKey?.length,hasApiKeyState:hasApiKey},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+          // #endregion
+          
+          // Only show error if we're in production AND don't have the key
+          return !hasKey && (typeof process === 'undefined' || !process.env || process.env.NODE_ENV !== 'development');
+      } catch (e) {
+          // #region agent log
+          fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:373',message:'checkEnv error',data:{error:String(e)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+          // #endregion
+          // If there's an error checking, assume we need the key (safer)
           return !hasApiKey;
       }
   }
 
   if (checkEnv()) {
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:381',message:'Showing API key error screen',data:{GEMINI_API_KEY,hasApiKey},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
       return (
         <div className="flex flex-col items-center justify-center h-screen bg-slate-50 text-slate-500 p-4 text-center">
             <div className="bg-white p-8 rounded-2xl shadow-lg max-w-md">
