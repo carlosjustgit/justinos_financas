@@ -50,6 +50,20 @@ export const deleteTransactionDb = async (id: string) => {
   if (error) throw error;
 };
 
+export const updateTransactionDb = async (transaction: Transaction) => {
+  const { id, ...rest } = transaction;
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not logged in");
+
+  const { error } = await supabase
+    .from('transactions')
+    .update({ ...rest, user_id: user.id })
+    .eq('id', id);
+
+  if (error) throw error;
+};
+
 export const addBatchTransactionsDb = async (transactions: Transaction[]) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not logged in");

@@ -7,7 +7,7 @@ import ImportModal from './components/ImportModal';
 import PlanningView from './components/PlanningView';
 import AddTransactionModal from './components/AddTransactionModal';
 import GoalsWidget from './components/GoalsWidget';
-import { supabase, fetchTransactions, addTransactionDb, deleteTransactionDb, addBatchTransactionsDb, fetchBudgetItems, saveBudgetItemsDb, deleteBudgetItemDb } from './services/supabaseClient';
+import { supabase, fetchTransactions, addTransactionDb, deleteTransactionDb, updateTransactionDb, addBatchTransactionsDb, fetchBudgetItems, saveBudgetItemsDb, deleteBudgetItemDb } from './services/supabaseClient';
 import { LayoutDashboard, Receipt, MessageSquareText, PlusCircle, LogOut, CalendarRange, PenLine, Settings, Download, Upload, Trash2, AlertTriangle, CheckCircle2, LogIn } from 'lucide-react';
 
 enum View {
