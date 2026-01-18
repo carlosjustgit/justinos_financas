@@ -491,7 +491,7 @@ const App: React.FC = () => {
                 onSaveBudgets={handleSaveBudget}
               />
             )}
-            {activeView === View.ADVISOR && <AdvisorChat transactions={transactions} />}
+            {activeView === View.ADVISOR && <AdvisorChat transactions={transactions} goals={goals} />}
             {activeView === View.SETTINGS && <SettingsView />}
           </div>
         </div>

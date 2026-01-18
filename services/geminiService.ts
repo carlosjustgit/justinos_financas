@@ -150,43 +150,64 @@ export const parseBankStatement = async (text: string): Promise<Omit<Transaction
   }
 };
 
-// Financial Advisor Chat
+// Financial Advisor Chat with Goals context
 export const getFinancialAdvice = async (
   currentHistory: { role: 'user' | 'model'; text: string }[],
   transactions: Transaction[],
-  userMessage: string
+  userMessage: string,
+  goals: any[] = []
 ) => {
   const ai = getClient();
   
-  // Create a summary of the financial situation to feed the context
+  // Create a summary of the financial situation
   const income = transactions.filter(t => t.type === TransactionType.INCOME).reduce((acc, t) => acc + t.amount, 0);
   const expense = transactions.filter(t => t.type === TransactionType.EXPENSE).reduce((acc, t) => acc + t.amount, 0);
-  const balance = income - expense;
+  const savings = transactions.filter(t => t.type === 'Poupança').reduce((acc, t) => acc + t.amount, 0);
+  const investments = transactions.filter(t => t.type === 'Investimento').reduce((acc, t) => acc + t.amount, 0);
+  const balance = income - expense - savings - investments;
+  const savingsRate = income > 0 ? ((savings + investments) / income * 100).toFixed(1) : '0';
   
-  // We send the last 20 transactions as context context to save tokens, or simplified list
+  // Recent transactions context
   const recentTransactions = transactions
     .slice(0, 50)
-    .map(t => `${t.date}: ${t.description} (${t.amount}€) - ${t.category} [${t.member}]`)
+    .map(t => `${t.date}: ${t.description} (${t.amount}€) - ${t.type} - ${t.category} [${t.member}]`)
     .join('\n');
+
+  // Goals context
+  const goalsContext = goals.length > 0 
+    ? `\nMETAS FINANCEIRAS:\n${goals.map(g => 
+        `- ${g.name}: ${g.currentAmount}€ / ${g.targetAmount}€ (${((g.currentAmount/g.targetAmount)*100).toFixed(0)}%) - Prazo: ${g.deadline}`
+      ).join('\n')}`
+    : '\nAinda não têm metas definidas.';
 
   const systemInstruction = `
     És um consultor financeiro pessoal experiente e empático, especializado no mercado português.
     O teu nome é "Gemini Advisor".
-    O teu objetivo é ajudar a família a gerir o orçamento, poupar dinheiro e investir com sabedoria.
+    O teu objetivo é ajudar a família a gerir o orçamento, poupar dinheiro, atingir metas e investir com sabedoria.
     
-    DADOS FINANCEIROS ATUAIS:
-    Saldo Total: ${balance.toFixed(2)}€
-    Receitas Totais: ${income.toFixed(2)}€
-    Despesas Totais: ${expense.toFixed(2)}€
+    DADOS FINANCEIROS ATUAIS (MÊS ATUAL):
+    💰 Receitas: ${income.toFixed(2)}€
+    💸 Despesas: ${expense.toFixed(2)}€
+    🎯 Poupanças: ${savings.toFixed(2)}€
+    📈 Investimentos: ${investments.toFixed(2)}€
+    💵 Disponível: ${balance.toFixed(2)}€
+    📊 Taxa de Poupança: ${savingsRate}%
+    ${goalsContext}
     
-    TRANSAÇÕES RECENTES:
+    TRANSAÇÕES RECENTES (últimas 50):
     ${recentTransactions}
     
     DIRETRIZES:
-    1. Responde sempre em Português de Portugal.
+    1. Responde sempre em Português de Portugal, usando markdown para formatação.
     2. Sê conciso, prático e motivador.
-    3. Usa os dados fornecidos para dar conselhos específicos (ex: "Notei que gastaram muito em restaurantes este mês").
-    4. Se te perguntarem sobre impostos ou leis, refere que és uma IA e que devem consultar um contabilista certificado, mas dá orientações gerais sobre o sistema fiscal português (IRS, etc).
+    3. Usa os dados fornecidos para dar conselhos específicos e personalizados.
+    4. Analisa padrões: gastos recorrentes, categorias com mais despesas, oportunidades de poupança.
+    5. Se houver metas, analisa se estão no caminho certo e sugere ajustes.
+    6. Para metas não definidas, sugere criar (ex: fundo emergência = 6 meses de despesas).
+    7. Usa emojis para tornar as respostas mais visuais e amigáveis.
+    8. Se te perguntarem sobre impostos/leis, refere que devem consultar um contabilista, mas dá orientações gerais.
+    9. Se sugeres algo, explica PORQUÊ e COMO implementar.
+    10. Celebra conquistas e encoraja quando necessário!
   `;
 
   const chat = ai.chats.create({

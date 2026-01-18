@@ -1,22 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Transaction, ChatMessage } from '../types';
+import { Transaction, ChatMessage, Goal } from '../types';
 import { getFinancialAdvice } from '../services/geminiService';
 import { generateId } from '../utils';
-import { Send, Bot, User, Sparkles } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Lightbulb } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 interface AdvisorChatProps {
   transactions: Transaction[];
+  goals?: Goal[];
 }
 
-const AdvisorChat: React.FC<AdvisorChatProps> = ({ transactions }) => {
+const AdvisorChat: React.FC<AdvisorChatProps> = ({ transactions, goals = [] }) => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
       role: 'model',
-      text: 'Olá! Sou o Gemini, o teu consultor financeiro pessoal. Como posso ajudar a tua família a poupar hoje?',
+      text: '👋 Olá! Sou o **Gemini**, o teu consultor financeiro pessoal inteligente.\n\nPosso ajudar-te com:\n- 💰 Análise dos teus gastos\n- 🎯 Estratégias para atingir as tuas metas\n- 📊 Sugestões de poupança\n- 📈 Conselhos de investimento\n\nO que gostarias de saber hoje?',
       timestamp: new Date()
     }
   ]);
@@ -49,7 +50,7 @@ const AdvisorChat: React.FC<AdvisorChatProps> = ({ transactions }) => {
       // Prepare history for API
       const history = messages.map(m => ({ role: m.role, text: m.text }));
       
-      const responseText = await getFinancialAdvice(history, transactions, userMsg.text);
+      const responseText = await getFinancialAdvice(history, transactions, userMsg.text, goals);
 
       const aiMsg: ChatMessage = {
         id: generateId(),
@@ -78,6 +79,15 @@ const AdvisorChat: React.FC<AdvisorChatProps> = ({ transactions }) => {
       handleSend();
     }
   };
+
+  // Suggested questions based on context
+  const suggestedQuestions = [
+    "Onde posso cortar gastos este mês?",
+    "Como posso poupar €500/mês?",
+    "Devo investir ou poupar primeiro?",
+    goals.length > 0 ? "Vou conseguir atingir as minhas metas?" : "Que metas devo definir?",
+    "Analisa os meus padrões de gasto"
+  ];
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
@@ -134,6 +144,27 @@ const AdvisorChat: React.FC<AdvisorChatProps> = ({ transactions }) => {
       </div>
 
       <div className="p-4 bg-white border-t border-gray-100">
+        {/* Suggested Questions */}
+        {messages.length === 1 && (
+          <div className="mb-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Lightbulb className="w-4 h-4 text-amber-500" />
+              <p className="text-xs font-medium text-gray-600">Perguntas sugeridas:</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {suggestedQuestions.map((q, i) => (
+                <button
+                  key={i}
+                  onClick={() => setInput(q)}
+                  className="text-xs px-3 py-1.5 bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-full transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
         <div className="relative flex items-end gap-2">
           <textarea
             value={input}
