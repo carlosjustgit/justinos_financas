@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Transaction, TransactionType } from '../types';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area } from 'recharts';
-import { Wallet, TrendingUp, TrendingDown, Sparkles, AlertTriangle, CalendarClock, Zap } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Sparkles, AlertTriangle, CalendarClock, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface DashboardProps {
   transactions: Transaction[];
@@ -10,12 +10,48 @@ interface DashboardProps {
 const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1'];
 
 const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
-  // --- Core Calculations ---
-  const totalIncome = transactions
+  // Month selector state - default to current month
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const selectedMonth = selectedDate.toISOString().slice(0, 7); // YYYY-MM
+  
+  // Filter transactions for selected month
+  const monthTransactions = useMemo(() => {
+    return transactions.filter(t => t.date.startsWith(selectedMonth));
+  }, [transactions, selectedMonth]);
+
+  // Month navigation
+  const goToPreviousMonth = () => {
+    setSelectedDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() - 1);
+      return newDate;
+    });
+  };
+
+  const goToNextMonth = () => {
+    setSelectedDate(prev => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() + 1);
+      return newDate;
+    });
+  };
+
+  const goToCurrentMonth = () => {
+    setSelectedDate(new Date());
+  };
+
+  const formatMonthYear = (date: Date) => {
+    return date.toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' });
+  };
+
+  const isCurrentMonth = selectedMonth === new Date().toISOString().slice(0, 7);
+
+  // --- Core Calculations (filtered by month) ---
+  const totalIncome = monthTransactions
     .filter(t => t.type === TransactionType.INCOME)
     .reduce((acc, curr) => acc + curr.amount, 0);
 
-  const totalExpense = transactions
+  const totalExpense = monthTransactions
     .filter(t => t.type === TransactionType.EXPENSE)
     .reduce((acc, curr) => acc + curr.amount, 0);
 
@@ -23,24 +59,23 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
 
   // --- SUPERPOWER: Subscription Detective Logic ---
   // Detect recurring expenses (same description, similar amount, appearing > 1 time)
+  // Use ALL transactions, not just current month
   const subscriptions = useMemo(() => {
     const groups: Record<string, { count: number; amount: number; lastDate: string }> = {};
     
     transactions
       .filter(t => t.type === TransactionType.EXPENSE)
       .forEach(t => {
-        // Normalize description to group similar ones (e.g. "Netflix Oct", "Netflix Nov")
-        // Simple normalization: first 8 chars or full string if short
+        // Normalize description to group similar ones
         const key = t.description.toLowerCase().trim(); 
         if (!groups[key]) {
           groups[key] = { count: 0, amount: t.amount, lastDate: t.date };
         }
         groups[key].count += 1;
-        // Update to most recent amount found
         groups[key].amount = t.amount; 
       });
 
-    // Filter for things that look like subscriptions (at least 2 occurrences or specific keywords)
+    // Filter for things that look like subscriptions
     return Object.entries(groups)
       .filter(([key, data]) => {
          const isSubscriptionKeyword = ['netflix', 'spotify', 'vodafone', 'meo', 'nos', 'ginásio', 'fitness', 'apple', 'google', 'edp', 'epal'].some(k => key.includes(k));
@@ -54,42 +89,40 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
 
   // --- SUPERPOWER: Time Machine (Forecast) Logic ---
   const forecast = useMemo(() => {
+    if (!isCurrentMonth) {
+      // For past/future months, just show the actual balance
+      return {
+        avgDailySpend: totalExpense / new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate(),
+        projectedBalance: balance,
+        status: balance > 0 ? 'safe' : 'danger'
+      };
+    }
+
     const today = new Date();
-    const currentMonthStr = today.toISOString().slice(0, 7); // YYYY-MM
     const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
     const currentDay = today.getDate();
 
-    // Get expenses strictly for this month
-    const thisMonthExpenses = transactions
-        .filter(t => t.type === TransactionType.EXPENSE && t.date.startsWith(currentMonthStr))
-        .reduce((acc, t) => acc + t.amount, 0);
-
-    const thisMonthIncome = transactions
-        .filter(t => t.type === TransactionType.INCOME && t.date.startsWith(currentMonthStr))
-        .reduce((acc, t) => acc + t.amount, 0);
-
     // Calculate burn rate (avg expense per day so far)
-    // Avoid division by zero if it's the 1st of the month
     const daysPassed = Math.max(1, currentDay);
-    const avgDailySpend = thisMonthExpenses / daysPassed;
+    const avgDailySpend = totalExpense / daysPassed;
 
     // Project remaining days
     const remainingDays = daysInMonth - currentDay;
     const projectedExtraExpense = avgDailySpend * remainingDays;
     
-    const projectedTotalExpense = thisMonthExpenses + projectedExtraExpense;
-    const projectedBalance = thisMonthIncome - projectedTotalExpense;
+    const projectedTotalExpense = totalExpense + projectedExtraExpense;
+    const projectedBalance = totalIncome - projectedTotalExpense;
 
     return {
         avgDailySpend,
         projectedBalance,
         status: projectedBalance > 0 ? 'safe' : 'danger'
     };
-  }, [transactions]);
+  }, [monthTransactions, isCurrentMonth, totalIncome, totalExpense, balance, selectedDate]);
 
 
-  // --- Chart Data Preparation ---
-  const expenseByCategory = transactions
+  // --- Chart Data Preparation (filtered by month) ---
+  const expenseByCategory = monthTransactions
     .filter(t => t.type === TransactionType.EXPENSE)
     .reduce((acc, curr) => {
       acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
@@ -101,7 +134,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     value: expenseByCategory[key]
   })).sort((a, b) => b.value - a.value);
 
-  const last7Transactions = [...transactions]
+  const last7Transactions = [...monthTransactions]
       .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 7)
       .reverse()
@@ -117,6 +150,37 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
   return (
     <div className="space-y-6 animate-fade-in pb-10">
       
+      {/* Month Selector */}
+      <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
+        <button 
+          onClick={goToPreviousMonth}
+          className="p-2 hover:bg-slate-100 rounded-lg transition"
+        >
+          <ChevronLeft className="w-5 h-5 text-slate-600" />
+        </button>
+        
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-slate-800 capitalize">
+            {formatMonthYear(selectedDate)}
+          </h2>
+          {!isCurrentMonth && (
+            <button 
+              onClick={goToCurrentMonth}
+              className="text-xs text-emerald-600 hover:text-emerald-700 font-medium mt-1"
+            >
+              Voltar ao mês atual
+            </button>
+          )}
+        </div>
+        
+        <button 
+          onClick={goToNextMonth}
+          className="p-2 hover:bg-slate-100 rounded-lg transition"
+        >
+          <ChevronRight className="w-5 h-5 text-slate-600" />
+        </button>
+      </div>
+      
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
@@ -129,7 +193,7 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
           <p className={`text-3xl font-bold ${balance >= 0 ? 'text-slate-800' : 'text-red-600'}`}>
             {formatCurrency(balance)}
           </p>
-          <p className="text-xs text-gray-400 mt-2">Património líquido acumulado</p>
+          <p className="text-xs text-gray-400 mt-2">Saldo do mês</p>
         </div>
 
         <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
@@ -187,8 +251,8 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
                         </p>
                         <p className="text-xs mt-2 opacity-75">
                             {forecast.status === 'safe' 
-                             ? "Estás num bom caminho para poupar este mês!" 
-                             : "Cuidado! A este ritmo podes entrar no vermelho."}
+                             ? (isCurrentMonth ? "Estás num bom caminho para poupar este mês!" : "Mês com saldo positivo")
+                             : (isCurrentMonth ? "Cuidado! A este ritmo podes entrar no vermelho." : "Mês com saldo negativo")}
                         </p>
                      </div>
                  </div>
