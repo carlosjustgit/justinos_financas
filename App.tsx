@@ -39,18 +39,19 @@ const App: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 1. Check Env Vars (Gemini API Key)
-  // Vite substitui process.env.API_KEY durante o build com o valor literal
-  // Não precisa de verificações de typeof - o Vite faz isso no build time
-  const GEMINI_API_KEY = process.env.API_KEY || process.env.GEMINI_API_KEY || '';
+  const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
   
+  console.log('🔑 API KEY:', {
+    value: GEMINI_API_KEY,
+    length: GEMINI_API_KEY?.length,
+    hasKey: !!GEMINI_API_KEY && GEMINI_API_KEY.length > 10
+  });
+
   useEffect(() => {
-    const apiKeyValue = GEMINI_API_KEY;
-    const hasKey = apiKeyValue && apiKeyValue.length > 10;
-    
-    if (hasKey) {
+    if (GEMINI_API_KEY && GEMINI_API_KEY.length > 10) {
       setHasApiKey(true);
     }
-  }, []);
+  }, [GEMINI_API_KEY]);
 
   // 2. Auth Listener
   useEffect(() => {
@@ -304,11 +305,8 @@ const App: React.FC = () => {
 
   // --- Main App ---
   
-  // Verifica diretamente o valor da constante (já substituída pelo Vite)
   const checkEnv = () => {
-      const apiKey = GEMINI_API_KEY;
-      // Se a chave existe e tem mais de 10 caracteres, consideramos válida
-      return !apiKey || apiKey.length < 10;
+      return !GEMINI_API_KEY || GEMINI_API_KEY.length < 10;
   }
 
   if (checkEnv()) {
@@ -321,9 +319,11 @@ const App: React.FC = () => {
                     A chave de API da Google (Gemini) não foi detetada.
                 </p>
                 <div className="text-xs bg-slate-100 p-3 rounded text-left font-mono">
-                    API_KEY=sua_chave_google_gemini
+                    GEMINI_API_KEY=sua_chave_google_gemini
                 </div>
-                <p className="text-xs text-gray-500 mt-2">Debug: {GEMINI_API_KEY?.substring(0, 20) || 'empty'}</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Debug: {GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 15)}... (${GEMINI_API_KEY.length} chars)` : 'VAZIA'}
+                </p>
             </div>
         </div>
       );
