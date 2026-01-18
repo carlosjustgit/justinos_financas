@@ -18,6 +18,10 @@ enum View {
 }
 
 const App: React.FC = () => {
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:20',message:'App component executing',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
+
   // Auth State
   const [session, setSession] = useState<any>(null);
   const [email, setEmail] = useState('');
@@ -46,7 +50,15 @@ const App: React.FC = () => {
   // After build, this becomes a literal string in the compiled code
   const GEMINI_API_KEY = (typeof process !== 'undefined' && process.env && process.env.API_KEY) || '';
   
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:47',message:'GEMINI_API_KEY value after Vite replacement',data:{value:GEMINI_API_KEY,type:typeof GEMINI_API_KEY,length:GEMINI_API_KEY?.length,processExists:typeof process !== 'undefined',processEnvExists:typeof process !== 'undefined' && !!process.env},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
+  
   useEffect(() => {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:50',message:'useEffect executing',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+
     console.log('🔍 Checking API Key...');
     console.log('GEMINI_API_KEY value:', GEMINI_API_KEY);
     console.log('GEMINI_API_KEY type:', typeof GEMINI_API_KEY);
@@ -58,14 +70,26 @@ const App: React.FC = () => {
     // JSON.stringify("AIzaSy...") = "AIzaSy..." (the actual key as a string)
     // JSON.stringify("") = "" (empty string, 0 length)
     const apiKeyValue = GEMINI_API_KEY;
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:65',message:'apiKeyValue before check',data:{value:apiKeyValue,type:typeof apiKeyValue,length:apiKeyValue?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+
     const hasKey = apiKeyValue && 
                    typeof apiKeyValue === 'string' && 
                    apiKeyValue.length > 0 &&
                    apiKeyValue !== 'undefined' &&
                    apiKeyValue !== 'null';
     
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:72',message:'hasKey check result',data:{hasKey,apiKeyValue,type:typeof apiKeyValue,length:apiKeyValue?.length,isEmpty:apiKeyValue === '',isUndefined:apiKeyValue === 'undefined'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    
     if (hasKey) {
       console.log('✅ API Key detected! Length:', apiKeyValue.length);
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:75',message:'API key detected branch',data:{length:apiKeyValue.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
       setHasApiKey(true);
     } else {
       console.error('❌ API Key NOT found!', {
@@ -76,6 +100,9 @@ const App: React.FC = () => {
         isEmpty: apiKeyValue === '',
         isUndefined: apiKeyValue === 'undefined'
       });
+      // #region agent log
+      fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:84',message:'API key NOT found branch',data:{value:apiKeyValue,type:typeof apiKeyValue,length:apiKeyValue?.length,isEmpty:apiKeyValue === '',isUndefined:apiKeyValue === 'undefined'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
     }
   }, []);
 
