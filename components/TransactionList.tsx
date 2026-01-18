@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { Transaction, TransactionType, FamilyMember } from '../types';
+import { Transaction, TransactionType, FamilyMember, BudgetItem } from '../types';
 import { Search, Filter, Trash2, ArrowUpCircle, ArrowDownCircle, ChevronLeft, ChevronRight, Edit2, X } from 'lucide-react';
 import { CATEGORIES } from '../constants';
 
 interface TransactionListProps {
   transactions: Transaction[];
+  budgetItems?: BudgetItem[];
   onDelete: (id: string) => void;
   onUpdate?: (id: string, updates: Partial<Transaction>) => void;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelete, onUpdate }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ transactions, budgetItems = [], onDelete, onUpdate }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMember, setFilterMember] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
@@ -20,8 +21,12 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelet
   const selectedMonth = selectedDate.toISOString().slice(0, 7); // YYYY-MM
   const isCurrentMonth = selectedMonth === new Date().toISOString().slice(0, 7);
 
-  // Get all unique categories from existing transactions + predefined ones
-  const allCategories = Array.from(new Set([...CATEGORIES, ...transactions.map(t => t.category)])).sort();
+  // Get all unique categories from existing transactions + predefined ones + budget items
+  const allCategories = React.useMemo(() => {
+    const transactionCategories = transactions.map(t => t.category);
+    const budgetCategories = budgetItems.map(b => b.category);
+    return Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories])).sort();
+  }, [transactions, budgetItems]);
 
   const filteredTransactions = transactions.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 

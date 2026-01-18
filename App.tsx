@@ -492,7 +492,7 @@ const App: React.FC = () => {
                 />
               </div>
             )}
-            {activeView === View.TRANSACTIONS && <TransactionList transactions={transactions} onDelete={handleDelete} onUpdate={handleUpdateTransaction} />}
+            {activeView === View.TRANSACTIONS && <TransactionList transactions={transactions} budgetItems={budgetItems} onDelete={handleDelete} onUpdate={handleUpdateTransaction} />}
             {activeView === View.PLANNING && (
               <PlanningView 
                 transactions={transactions} 
