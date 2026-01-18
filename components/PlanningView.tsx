@@ -31,17 +31,14 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
   const monthlyBudget = savedBudgets.filter(b => b.month === currentMonth);
   const monthlyTransactions = transactions.filter(t => t.date.startsWith(currentMonth));
 
-  // Track custom categories added in this session
-  const [customCategories, setCustomCategories] = useState<string[]>([]);
-
-  // Get all unique categories from transactions, budgets, predefined list, and custom categories
+  // Get all unique categories from transactions, budgets, and predefined list
   const allAvailableCategories = React.useMemo(() => {
     const transactionCategories = transactions.map(t => t.category);
     const budgetCategories = savedBudgets.map(b => b.category);
-    return Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories, ...customCategories]))
+    return Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories]))
       .filter(c => c !== 'Outros')
       .sort();
-  }, [transactions, savedBudgets, customCategories]);
+  }, [transactions, savedBudgets]);
 
   // Calculations
   const plannedIncome = monthlyBudget.filter(b => b.type === TransactionType.INCOME).reduce((acc, curr) => acc + curr.amount, 0);
@@ -93,9 +90,11 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
       targetDate.setMonth(targetDate.getMonth() + 1);
     }
 
+    console.log('Adding budget items with categories:', newItems.map(i => i.category));
     onSaveBudgets([...savedBudgets, ...newItems]);
     setIsFormOpen(false);
     setNewItem({ ...newItem, description: '', amount: '' });
+    setShowNewCategoryInput(false);
   };
 
   const handleDeleteItem = (id: string) => {
@@ -291,7 +290,6 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
                         onClick={() => {
                           if (customCategory.trim()) {
                             const newCat = customCategory.trim();
-                            setCustomCategories(prev => [...prev, newCat]);
                             setNewItem({...newItem, category: newCat});
                             setShowNewCategoryInput(false);
                             setCustomCategory('');
