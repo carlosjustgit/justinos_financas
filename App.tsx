@@ -51,11 +51,16 @@ const App: React.FC = () => {
   // Vite replaces process.env.API_KEY with JSON.stringify(value) during build
   // So if the env var exists, it becomes "AIzaSy..." (the actual string)
   // If it doesn't exist, it becomes "" (empty string)
-  const GEMINI_API_KEY = (typeof process !== 'undefined' && process.env && process.env.API_KEY) || '';
+  
+  // Try multiple ways to access the key (Vite should replace all of these)
+  const GEMINI_API_KEY_1 = (typeof process !== 'undefined' && process.env && process.env.API_KEY) || '';
+  const GEMINI_API_KEY_2 = (typeof process !== 'undefined' && process.env && process.env.GEMINI_API_KEY) || '';
+  // Use the first non-empty one
+  const GEMINI_API_KEY = GEMINI_API_KEY_1 || GEMINI_API_KEY_2;
   
   // #region agent log
   // Log the actual value that Vite injected (this will be a literal string after build)
-  fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:51',message:'GEMINI_API_KEY after Vite replacement',data:{value:GEMINI_API_KEY,type:typeof GEMINI_API_KEY,length:GEMINI_API_KEY?.length,isString:typeof GEMINI_API_KEY === 'string',isEmpty:GEMINI_API_KEY === '',firstChars:GEMINI_API_KEY?.substring(0,20)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  fetch('http://127.0.0.1:7243/ingest/57137d69-ca68-46ec-b371-85d59159105e',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'App.tsx:56',message:'GEMINI_API_KEY after Vite replacement',data:{value:GEMINI_API_KEY,value1:GEMINI_API_KEY_1,value2:GEMINI_API_KEY_2,type:typeof GEMINI_API_KEY,length:GEMINI_API_KEY?.length,isString:typeof GEMINI_API_KEY === 'string',isEmpty:GEMINI_API_KEY === '',firstChars:GEMINI_API_KEY?.substring(0,20)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
   // #endregion
   
   // #region agent log
