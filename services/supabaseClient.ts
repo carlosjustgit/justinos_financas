@@ -168,3 +168,42 @@ export const deleteBudgetItemDb = async (id: string) => {
     
   if (error) throw error;
 }
+
+// --- Categories API ---
+
+export const fetchCategories = async (): Promise<string[]> => {
+  const householdId = await getUserHouseholdId();
+  if (!householdId) return [];
+
+  const { data, error } = await supabase
+    .from('categories')
+    .select('name')
+    .eq('household_id', householdId)
+    .order('name');
+
+  if (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
+
+  return data.map(c => c.name);
+};
+
+export const addCategoryDb = async (categoryName: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not logged in");
+
+  const householdId = await getUserHouseholdId();
+  if (!householdId) throw new Error("User not in a household");
+
+  const { error } = await supabase
+    .from('categories')
+    .insert([{ name: categoryName, household_id: householdId }]);
+
+  if (error) {
+    // Ignore duplicate errors (unique constraint)
+    if (error.code !== '23505') {
+      throw error;
+    }
+  }
+};

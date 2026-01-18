@@ -6,11 +6,12 @@ import { CATEGORIES } from '../constants';
 interface TransactionListProps {
   transactions: Transaction[];
   budgetItems?: BudgetItem[];
+  customCategories?: string[];
   onDelete: (id: string) => void;
   onUpdate?: (id: string, updates: Partial<Transaction>) => void;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions, budgetItems = [], onDelete, onUpdate }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ transactions, budgetItems = [], customCategories = [], onDelete, onUpdate }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMember, setFilterMember] = useState<string>('all');
   const [filterType, setFilterType] = useState<string>('all');
@@ -21,12 +22,12 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, budgetI
   const selectedMonth = selectedDate.toISOString().slice(0, 7); // YYYY-MM
   const isCurrentMonth = selectedMonth === new Date().toISOString().slice(0, 7);
 
-  // Get all unique categories from existing transactions + predefined ones + budget items
+  // Get all unique categories from existing transactions + predefined ones + budget items + custom categories from Supabase
   const allCategories = React.useMemo(() => {
     const transactionCategories = transactions.map(t => t.category);
     const budgetCategories = budgetItems.map(b => b.category);
-    return Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories])).sort();
-  }, [transactions, budgetItems]);
+    return Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories, ...customCategories])).sort();
+  }, [transactions, budgetItems, customCategories]);
 
   const filteredTransactions = transactions.filter(t => {
     const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) || 

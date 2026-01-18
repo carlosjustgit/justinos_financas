@@ -7,10 +7,12 @@ import { ChevronLeft, ChevronRight, Plus, Trash2, Repeat, PiggyBank, Target, Ale
 interface PlanningViewProps {
   transactions: Transaction[];
   savedBudgets: BudgetItem[];
+  customCategories: string[];
   onSaveBudgets: (items: BudgetItem[]) => void;
+  onAddCategory: (categoryName: string) => void;
 }
 
-const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets, onSaveBudgets }) => {
+const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets, customCategories, onSaveBudgets, onAddCategory }) => {
   // State for month navigation (default to current month YYYY-MM)
   const [currentMonth, setCurrentMonth] = useState(new Date().toISOString().slice(0, 7));
   
@@ -31,26 +33,23 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
   const monthlyBudget = savedBudgets.filter(b => b.month === currentMonth);
   const monthlyTransactions = transactions.filter(t => t.date.startsWith(currentMonth));
 
-  // Track temporarily added categories (before saving)
-  const [tempCategories, setTempCategories] = useState<string[]>([]);
-
-  // Get all unique categories from transactions, budgets, predefined list + temp categories
+  // Get all unique categories from transactions, budgets, predefined list + custom categories from Supabase
   const allAvailableCategories = React.useMemo(() => {
     const transactionCategories = transactions.map(t => t.category);
     const budgetCategories = savedBudgets.map(b => b.category);
-    const allCats = Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories, ...tempCategories]))
+    const allCats = Array.from(new Set([...CATEGORIES, ...transactionCategories, ...budgetCategories, ...customCategories]))
       .filter(c => c !== 'Outros')
       .sort();
     
     console.log('Available categories recalculated:', {
       total: allCats.length,
-      fromBudgets: budgetCategories,
-      fromTemp: tempCategories,
+      fromBudgets: budgetCategories.length,
+      fromCustom: customCategories.length,
       allCategories: allCats
     });
     
     return allCats;
-  }, [transactions, savedBudgets, tempCategories]);
+  }, [transactions, savedBudgets, customCategories]);
 
   // Calculations
   const plannedIncome = monthlyBudget.filter(b => b.type === TransactionType.INCOME).reduce((acc, curr) => acc + curr.amount, 0);
@@ -320,15 +319,15 @@ const PlanningView: React.FC<PlanningViewProps> = ({ transactions, savedBudgets,
                         className="flex-1 p-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none"
                       />
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (customCategory.trim()) {
                             const newCat = customCategory.trim();
-                            // Add to temp categories immediately so it appears in dropdown
-                            setTempCategories(prev => [...prev, newCat]);
+                            // Save to Supabase immediately!
+                            await onAddCategory(newCat);
                             setNewItem({...newItem, category: newCat});
                             setShowNewCategoryInput(false);
                             setCustomCategory('');
-                            console.log('Custom category added to temp list:', newCat);
+                            console.log('Custom category saved to Supabase:', newCat);
                           }
                         }}
                         className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"

@@ -7,7 +7,7 @@ import ImportModal from './components/ImportModal';
 import PlanningView from './components/PlanningView';
 import AddTransactionModal from './components/AddTransactionModal';
 import GoalsWidget from './components/GoalsWidget';
-import { supabase, fetchTransactions, addTransactionDb, deleteTransactionDb, updateTransactionDb, addBatchTransactionsDb, fetchBudgetItems, saveBudgetItemsDb, deleteBudgetItemDb } from './services/supabaseClient';
+import { supabase, fetchTransactions, addTransactionDb, deleteTransactionDb, updateTransactionDb, addBatchTransactionsDb, fetchBudgetItems, saveBudgetItemsDb, deleteBudgetItemDb, fetchCategories, addCategoryDb } from './services/supabaseClient';
 import { LayoutDashboard, Receipt, MessageSquareText, PlusCircle, LogOut, CalendarRange, PenLine, Settings, Download, Upload, Trash2, AlertTriangle, CheckCircle2, LogIn } from 'lucide-react';
 
 enum View {
@@ -32,6 +32,7 @@ const App: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   
   // Modals
@@ -83,8 +84,10 @@ const App: React.FC = () => {
     try {
       const txs = await fetchTransactions();
       const budgets = await fetchBudgetItems();
+      const cats = await fetchCategories();
       setTransactions(txs);
       setBudgetItems(budgets);
+      setCustomCategories(cats);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -200,6 +203,17 @@ const App: React.FC = () => {
     } catch (e) {
       console.error("Sync error", e);
       loadData();
+    }
+  };
+
+  const handleAddCategory = async (categoryName: string) => {
+    try {
+      await addCategoryDb(categoryName);
+      // Add to local state immediately
+      setCustomCategories(prev => [...new Set([...prev, categoryName])].sort());
+      console.log('Category saved:', categoryName);
+    } catch (e) {
+      console.error("Error saving category:", e);
     }
   };
 
@@ -496,12 +510,14 @@ const App: React.FC = () => {
                 />
               </div>
             )}
-            {activeView === View.TRANSACTIONS && <TransactionList transactions={transactions} budgetItems={budgetItems} onDelete={handleDelete} onUpdate={handleUpdateTransaction} />}
+            {activeView === View.TRANSACTIONS && <TransactionList transactions={transactions} budgetItems={budgetItems} customCategories={customCategories} onDelete={handleDelete} onUpdate={handleUpdateTransaction} />}
             {activeView === View.PLANNING && (
               <PlanningView 
                 transactions={transactions} 
                 savedBudgets={budgetItems}
+                customCategories={customCategories}
                 onSaveBudgets={handleSaveBudget}
+                onAddCategory={handleAddCategory}
               />
             )}
             {activeView === View.ADVISOR && <AdvisorChat transactions={transactions} goals={goals} />}
@@ -542,6 +558,7 @@ const App: React.FC = () => {
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleManualAdd}
         existingTransactions={transactions}
+        customCategories={customCategories}
       />
     </div>
   );

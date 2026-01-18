@@ -10,9 +10,10 @@ interface AddTransactionModalProps {
   onClose: () => void;
   onAdd: (transaction: Transaction) => void;
   existingTransactions?: Transaction[];
+  customCategories?: string[];
 }
 
-const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, onAdd, existingTransactions = [] }) => {
+const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClose, onAdd, existingTransactions = [], customCategories = [] }) => {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
@@ -28,8 +29,8 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
   // Get all unique categories
   const allCategories = React.useMemo(() => {
     const transactionCategories = existingTransactions.map(t => t.category);
-    return Array.from(new Set([...CATEGORIES, ...transactionCategories])).sort();
-  }, [existingTransactions]);
+    return Array.from(new Set([...CATEGORIES, ...transactionCategories, ...customCategories])).sort();
+  }, [existingTransactions, customCategories]);
 
   if (!isOpen) return null;
 
