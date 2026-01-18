@@ -9,7 +9,12 @@ export const CATEGORIES = [
   'Lazer',
   'Educação',
   'Serviços (Água/Luz/Net)',
-  'Investimentos',
+  'Poupança - Fundo Emergência',
+  'Poupança - Férias',
+  'Poupança - Casa',
+  'Investimento - Ações',
+  'Investimento - Fundos',
+  'Investimento - Crypto',
   'Salário',
   'Outros'
 ];

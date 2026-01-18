@@ -172,8 +172,10 @@ const AddTransactionModal: React.FC<AddTransactionModalProps> = ({ isOpen, onClo
                   onChange={e => setFormData({ ...formData, type: e.target.value as TransactionType })}
                   className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none cursor-pointer"
                 >
-                  <option value={TransactionType.EXPENSE}>Despesa</option>
-                  <option value={TransactionType.INCOME}>Receita</option>
+                  <option value={TransactionType.INCOME}>💰 Receita</option>
+                  <option value={TransactionType.EXPENSE}>💸 Despesa</option>
+                  <option value={TransactionType.SAVINGS}>🎯 Poupança</option>
+                  <option value={TransactionType.INVESTMENT}>📈 Investimento</option>
                 </select>
              </div>
           </div>

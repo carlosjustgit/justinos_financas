@@ -1,6 +1,8 @@
 export enum TransactionType {
   INCOME = 'Receita',
-  EXPENSE = 'Despesa'
+  EXPENSE = 'Despesa',
+  SAVINGS = 'Poupança',
+  INVESTMENT = 'Investimento'
 }
 
 export enum FamilyMember {
@@ -27,6 +29,17 @@ export interface BudgetItem {
   type: TransactionType;
   category: string;
   isRecurring?: boolean;
+}
+
+export interface Goal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline: string; // YYYY-MM-DD
+  category: 'emergency' | 'vacation' | 'house' | 'education' | 'retirement' | 'other';
+  priority: 'high' | 'medium' | 'low';
+  createdAt: string;
 }
 
 export interface ChatMessage {
