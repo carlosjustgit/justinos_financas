@@ -18,6 +18,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [selectedMember, setSelectedMember] = useState<FamilyMember>(FamilyMember.JOINT);
+  const [selectedType, setSelectedType] = useState<string>('auto'); // 'auto' | TransactionType
 
   if (!isOpen) return null;
 
@@ -97,6 +98,8 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
             newTransactions.push({
                 ...t,
                 id: generateId(),
+                // Override type if user selected a specific one
+                type: selectedType === 'auto' ? t.type : (selectedType as TransactionType),
                 member: selectedMember
             });
         }
@@ -161,6 +164,36 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
                     className="text-emerald-600 focus:ring-emerald-500"
                   />
                   <span className="text-sm text-gray-700">{member}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de extrato</label>
+            <div className="flex gap-3 flex-wrap">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="type"
+                  value="auto"
+                  checked={selectedType === 'auto'}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="text-emerald-600 focus:ring-emerald-500"
+                />
+                <span className="text-sm text-gray-700">Automático (IA decide)</span>
+              </label>
+              {Object.values(TransactionType).map((type) => (
+                <label key={type} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="type"
+                    value={type}
+                    checked={selectedType === type}
+                    onChange={(e) => setSelectedType(e.target.value)}
+                    className="text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span className="text-sm text-gray-700">{type}</span>
                 </label>
               ))}
             </div>
