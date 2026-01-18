@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Transaction, FamilyMember, BudgetItem } from './types';
+import { Transaction, FamilyMember, BudgetItem, Goal } from './types';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
 import AdvisorChat from './components/AdvisorChat';
 import ImportModal from './components/ImportModal';
 import PlanningView from './components/PlanningView';
 import AddTransactionModal from './components/AddTransactionModal';
+import GoalsWidget from './components/GoalsWidget';
 import { supabase, fetchTransactions, addTransactionDb, deleteTransactionDb, addBatchTransactionsDb, fetchBudgetItems, saveBudgetItemsDb, deleteBudgetItemDb } from './services/supabaseClient';
 import { LayoutDashboard, Receipt, MessageSquareText, PlusCircle, LogOut, CalendarRange, PenLine, Settings, Download, Upload, Trash2, AlertTriangle, CheckCircle2, LogIn } from 'lucide-react';
 
@@ -30,6 +31,7 @@ const App: React.FC = () => {
   const [activeView, setActiveView] = useState<View>(View.DASHBOARD);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   
   // Modals
@@ -464,8 +466,23 @@ const App: React.FC = () => {
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
-          <div className="max-w-6xl mx-auto">
-            {activeView === View.DASHBOARD && <Dashboard transactions={transactions} />}
+          <div className="max-w-7xl mx-auto">
+            {activeView === View.DASHBOARD && (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <Dashboard transactions={transactions} />
+                </div>
+                <div className="lg:col-span-1">
+                  <GoalsWidget 
+                    goals={goals}
+                    onAddGoal={(goal) => setGoals([...goals, goal])}
+                    onDeleteGoal={(id) => setGoals(goals.filter(g => g.id !== id))}
+                    totalSavings={transactions.filter(t => t.type === 'Poupança').reduce((acc, t) => acc + t.amount, 0)}
+                    monthlyIncome={transactions.filter(t => t.type === 'Receita').reduce((acc, t) => acc + t.amount, 0)}
+                  />
+                </div>
+              </div>
+            )}
             {activeView === View.TRANSACTIONS && <TransactionList transactions={transactions} onDelete={handleDelete} />}
             {activeView === View.PLANNING && (
               <PlanningView 
