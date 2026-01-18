@@ -108,10 +108,13 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, onDelet
           </div>
           
           <div className="relative">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <Filter className="w-4 h-4 text-gray-400" />
+            </div>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none appearance-none bg-white cursor-pointer"
+              className="pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none appearance-none bg-white cursor-pointer"
             >
               <option value="all">Todos Tipos</option>
               {Object.values(TransactionType).map(t => (
