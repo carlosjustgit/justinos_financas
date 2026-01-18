@@ -193,6 +193,10 @@ const App: React.FC = () => {
       }
       // 2. Upsert current
       await saveBudgetItemsDb(items);
+      
+      // 3. RELOAD DATA TO GET FRESH DATA FROM SUPABASE!
+      await loadData();
+      console.log('Budget saved and data reloaded!');
     } catch (e) {
       console.error("Sync error", e);
       loadData();
