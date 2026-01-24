@@ -107,7 +107,7 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
     if (numericAmounts.length === 0) continue;
     
     // Determine transaction type based on context and Revolut column logic
-    let type: TransactionType;
+    let type: TransactionType = TransactionType.EXPENSE; // DEFAULT: EXPENSE
     let category = 'Outros';
     let amount = numericAmounts[0];
     
@@ -116,21 +116,21 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
       type = TransactionType.INVESTMENT;
       category = 'Fundos';
     }
-    // Check if it's in the "Dinheiro recebido" column (INCOME)
-    // Income keywords: "Transferência de utilizador", "Carregamento de", "Sent from"
+    // Check if it's in the "Dinheiro recebido" column (INCOME) - VERY SPECIFIC
+    // ONLY these exact patterns are income:
     else if (
       description.includes('Transferência de utilizador Revolut') ||
-      description.includes('Carregamento de') ||
-      context.includes('Sent from N26') ||
-      context.includes('Referência: From')
+      (description.includes('Carregamento de') && (context.includes('Referência:') || context.includes('De:'))) ||
+      context.includes('Sent from N26')
     ) {
       type = TransactionType.INCOME;
       category = 'Transferência';
     }
-    // Everything else is EXPENSE (default)
-    else {
-      type = TransactionType.EXPENSE;
-      
+    
+    // Categorize if it's an expense (already set as default)
+    if (type === TransactionType.EXPENSE) {
+    // Categorize if it's an expense (already set as default)
+    if (type === TransactionType.EXPENSE) {
       // Categorize expenses
       if (description.includes('Pingo Doce') || description.includes('Continente') || description.includes('Lidl') || description.includes('Auchan')) {
         category = 'Supermercado';
@@ -143,13 +143,15 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
       } else if (description.includes('Pandora') || description.includes('Etsy')) {
         category = 'Lazer';
       } else if (description.startsWith('To ') || description.includes('Transferência para')) {
-        category = 'Transferência';
+        category = 'Transferência Enviada';
       } else if (description.includes('Levantamento') || description.includes('numerário')) {
         category = 'Levantamento';
       } else if (description.includes('Comissão') || description.includes('taxa')) {
         category = 'Taxas Bancárias';
       } else if (description.includes('Wallison')) {
-        category = 'Serviços';
+        category = 'Restaurantes';
+      } else if (description.includes('Huel')) {
+        category = 'Saúde';
       }
     }
     
