@@ -66,6 +66,25 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
     }
   };
 
+  // Helper function to calculate string similarity (Levenshtein distance)
+  const calculateSimilarity = (str1: string, str2: string): number => {
+    const s1 = str1.toLowerCase().trim();
+    const s2 = str2.toLowerCase().trim();
+    
+    if (s1 === s2) return 100;
+    if (s1.length === 0 || s2.length === 0) return 0;
+    
+    // Simple similarity: check if one contains the other or shared words
+    const words1 = s1.split(/\s+/);
+    const words2 = s2.split(/\s+/);
+    const sharedWords = words1.filter(w => words2.includes(w));
+    
+    if (s1.includes(s2) || s2.includes(s1)) return 90;
+    
+    const similarity = (sharedWords.length / Math.max(words1.length, words2.length)) * 100;
+    return similarity;
+  };
+
   const handleProcess = async () => {
     if (!text.trim()) {
       setError("Por favor, cole o texto do extrato ou carregue um ficheiro.");
@@ -83,14 +102,24 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
       const newTransactions: Transaction[] = [];
 
       extractedData.forEach(t => {
-        // Deduplication Logic:
-        // Check if we already have a transaction with same Date, Amount, and Type
-        // We do not check description strictly because manual entry description might differ from bank description
-        const isDuplicate = existingTransactions.some(existing => 
-            existing.date === t.date && 
-            Math.abs(existing.amount - t.amount) < 0.01 && // Float comparison safety
-            existing.type === t.type
-        );
+        // IMPROVED Deduplication Logic:
+        // 1. Same date (±1 day tolerance for bank processing delays)
+        // 2. Same amount (within 0.01€)
+        // 3. Similar description (>70% similarity) OR same type
+        const isDuplicate = existingTransactions.some(existing => {
+            const dateDiff = Math.abs(
+              new Date(existing.date).getTime() - new Date(t.date).getTime()
+            ) / (1000 * 60 * 60 * 24); // days
+            
+            const amountMatch = Math.abs(existing.amount - t.amount) < 0.01;
+            const dateMatch = dateDiff <= 1; // within 1 day
+            const descSimilarity = calculateSimilarity(existing.description, t.description);
+            const typeMatch = existing.type === t.type;
+            
+            // Consider duplicate if:
+            // - Same date AND amount AND (high description similarity OR same type)
+            return dateMatch && amountMatch && (descSimilarity > 70 || typeMatch);
+        });
 
         if (isDuplicate) {
             duplicatesCount++;
@@ -147,7 +176,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
 
         <div className="p-6 flex-1 overflow-y-auto space-y-4">
           <p className="text-sm text-gray-600">
-            A nossa IA consegue ler extratos de vários bancos e <strong>ignora automaticamente transações duplicadas</strong> (mesma data e valor).
+            A nossa IA consegue ler extratos de vários bancos e <strong>ignora automaticamente transações duplicadas</strong> (mesma data ±1 dia, mesmo valor e descrição similar).
           </p>
 
           <div>

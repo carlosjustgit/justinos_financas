@@ -133,19 +133,34 @@ export const parseBankStatement = async (text: string): Promise<Omit<Transaction
     Hoje é ${today}. Se o ano não estiver explícito, assume o ano corrente ou o mais provável com base na data de hoje.
     Ignora cabeçalhos, rodapés ou saldos acumulados. Extrai apenas movimentos individuais.
     
-    INSTRUÇÕES IMPORTANTES:
-    - Para o campo "type", usa:
-      * "Receita" para salários, ordenados, transferências recebidas
-      * "Despesa" para compras normais do dia-a-dia
-      * "Poupança" para transferências para contas poupança ou fundos de emergência
-      * "Investimento" para compras de ações, fundos, crypto, ou depósitos em contas de investimento
+    INSTRUÇÕES CRÍTICAS PARA "type" (Receita vs Despesa):
     
-    - Para "category", sê o mais específico possível. Exemplos:
-      * Se vires "Netflix", usa "Netflix" (não "Serviços")
-      * Se vires "Pingo Doce", usa "Supermercado"
-      * Se vires "Galp", usa "Transporte"
-      * Se vires "Degiro" ou "Trading212", usa "Ações" e type "Investimento"
-      * Se vires "Revolut Savings", usa "Fundo Emergência" e type "Poupança"
+    1. ANALISA O CONTEXTO, NÃO APENAS O SINAL DO VALOR:
+       - Se a descrição menciona "salário", "ordenado", "vencimento", "subsídio", é SEMPRE "Receita"
+       - Se a descrição menciona "compra", "pagamento", "débito", "taxa", é SEMPRE "Despesa"
+       - Se a descrição menciona "transferência recebida" ou "crédito de", é "Receita"
+       - Se a descrição menciona "transferência enviada" ou "débito para", é "Despesa"
+    
+    2. PALAVRAS-CHAVE PARA RECEITA:
+       - Salário, Ordenado, Vencimento, Subsídio, Reembolso, Transferência Recebida, Crédito
+       - Se vires qualquer uma destas, é "Receita" mesmo que o valor tenha sinal negativo no extrato
+    
+    3. PALAVRAS-CHAVE PARA DESPESA:
+       - Pagamento, Compra, Débito, Taxa, Transferência Enviada, Levantamento
+       - Nomes de lojas (Continente, Pingo Doce, Lidl, Netflix, Vodafone, etc) são SEMPRE "Despesa"
+    
+    4. PARA POUPANÇA E INVESTIMENTO:
+       - "Poupança": transferências para contas poupança (ex: "Revolut Savings", "Conta Poupança")
+       - "Investimento": compras de ações, fundos, crypto (ex: "Degiro", "Trading212", "Coinbase")
+    
+    5. CATEGORIAS ESPECÍFICAS:
+       - Usa o nome exato se for conhecido (Netflix, Spotify, Vodafone, MEO, NOS)
+       - Para supermercados: usa "Supermercado" (Continente, Pingo Doce, Lidl, Minipreço, Aldi)
+       - Para combustível: usa "Transporte" (Galp, Repsol, BP, Cepsa)
+       - Para serviços públicos: usa "Serviços (Água/Luz/Net)" (EDP, Águas, MEO, NOS, Vodafone)
+       - Para bancos/taxas: usa "Taxas Bancárias" ou "Serviços Bancários"
+    
+    IMPORTANTE: Se houver ambiguidade, usa o contexto da descrição, NÃO o sinal do valor!
     
     TEXTO DO EXTRATO:
     ${text}
