@@ -35,6 +35,10 @@ const App: React.FC = () => {
   const [customCategories, setCustomCategories] = useState<string[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   
+  // Household State
+  const [households, setHouseholds] = useState<Array<{id: string, name: string}>>([]);
+  const [currentHouseholdId, setCurrentHouseholdId] = useState<string | null>(null);
+  
   // Modals
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -75,9 +79,47 @@ const App: React.FC = () => {
   // 3. Data Fetching (Only if logged in)
   useEffect(() => {
     if (session) {
-      loadData();
+      loadHouseholds();
     }
   }, [session]);
+
+  // 4. Load data when household changes
+  useEffect(() => {
+    if (session && currentHouseholdId) {
+      loadData();
+    }
+  }, [session, currentHouseholdId]);
+
+  const loadHouseholds = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('household_members')
+        .select(`
+          household_id,
+          households (
+            id,
+            name
+          )
+        `)
+        .eq('user_id', session?.user?.id);
+
+      if (error) throw error;
+
+      const householdList = data.map((hm: any) => ({
+        id: hm.households.id,
+        name: hm.households.name
+      }));
+
+      setHouseholds(householdList);
+      
+      // Set first household as default
+      if (householdList.length > 0 && !currentHouseholdId) {
+        setCurrentHouseholdId(householdList[0].id);
+      }
+    } catch (error) {
+      console.error("Error loading households:", error);
+    }
+  };
 
   const loadData = async () => {
     setIsLoadingData(true);
@@ -414,6 +456,24 @@ const App: React.FC = () => {
       <aside className="w-64 bg-white border-r border-slate-100 flex flex-col hidden md:flex z-10 shadow-sm">
         <div className="p-6">
           <BrandLogo />
+          
+          {/* Household Selector */}
+          {households.length > 0 && (
+            <div className="mt-4 mb-6">
+              <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2 block">Conta Ativa</label>
+              <select
+                value={currentHouseholdId || ''}
+                onChange={(e) => setCurrentHouseholdId(e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none bg-white text-slate-900 font-medium cursor-pointer"
+              >
+                {households.map(h => (
+                  <option key={h.id} value={h.id}>
+                    {h.name.includes('Witfy') || h.name.includes('Startup') ? '💼' : '🏠'} {h.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           
           <nav className="space-y-2">
             <NavButton view={View.DASHBOARD} icon={LayoutDashboard} label="Visão Geral" />
