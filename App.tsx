@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Transaction, FamilyMember, BudgetItem, Goal } from './types';
+import { Transaction, FamilyMember, BudgetItem, Goal, TransactionType } from './types';
 import Dashboard from './components/Dashboard';
 import TransactionList from './components/TransactionList';
 import AdvisorChat from './components/AdvisorChat';
