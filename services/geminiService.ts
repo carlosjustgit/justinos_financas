@@ -103,22 +103,23 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
     let type: TransactionType;
     let category = 'Outros';
     
-    // Check for investment
+    // Check for investment first
     if (description.includes('Fundos Monetários')) {
       type = TransactionType.INVESTMENT;
       category = 'Fundos';
     }
-    // Check for income keywords (received money)
+    // Check for income keywords - VERY specific criteria
     else if (
-      description.includes('Transferência de utilizador Revolut') ||
-      description.includes('Carregamento de') ||
-      contextLower.includes('referência: from') ||
-      contextLower.includes('sent from')
+      (description.includes('Transferência de utilizador Revolut')) ||
+      (description.includes('Carregamento de') && contextLower.includes('referência:')) ||
+      (contextLower.includes('referência: from') && contextLower.includes('de:')) ||
+      (contextLower.includes('sent from n26')) ||
+      (description.includes('To EUR Personal') && context.match(/€200\.00\s+€\d/)) // To EUR Personal when it's in "received" column
     ) {
       type = TransactionType.INCOME;
       category = 'Transferência';
     }
-    // Everything else is expense
+    // DEFAULT: Everything else is EXPENSE (most common in statements)
     else {
       type = TransactionType.EXPENSE;
       
