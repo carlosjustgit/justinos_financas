@@ -32,6 +32,204 @@ const cleanJson = (text: string): string => {
   return clean;
 };
 
+// Parse Revolut structured statement (direct column extraction)
+const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>[] | null => {
+  // Check if it's a Revolut statement
+  if (!text.includes('Revolut') || !text.includes('Dinheiro retirado') || !text.includes('Dinheiro recebido')) {
+    return null; // Not a Revolut statement
+  }
+
+  console.log('🎯 Detected Revolut statement - using structured parser');
+
+  const transactions: Omit<Transaction, 'id' | 'member'>[] = [];
+  const lines = text.split('\n');
+  
+  let isMainAccount = false;
+  let skipSection = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Detect section starts
+    if (line.includes('Operações da conta de') && !line.includes('Operações da conta de 1')) {
+      // Subconta (ex: Aysha) - skip
+      skipSection = true;
+      console.log('⏭️ Skipping subconta:', line);
+      continue;
+    }
+    
+    if (line.includes('Operações da conta') && !line.includes('Aysha') && !line.includes('Cofres')) {
+      // Main account
+      isMainAccount = true;
+      skipSection = false;
+      console.log('✅ Entering main account section');
+      continue;
+    }
+
+    if (line.includes('Cofres Pessoais') || line.includes('Depósito')) {
+      skipSection = true;
+      console.log('⏭️ Skipping:', line);
+      continue;
+    }
+
+    // Skip if in wrong section
+    if (skipSection || !isMainAccount) continue;
+
+    // Match date pattern (DD/MM/YYYY)
+    const dateMatch = line.match(/^(\d{2}\/\d{2}\/\d{4})/);
+    if (!dateMatch) continue;
+
+    const date = dateMatch[1];
+    const [day, month, year] = date.split('/');
+    const isoDate = `${year}-${month}-${day}`;
+
+    // Try to find description and amounts in the same line or next lines
+    let description = '';
+    let withdrawn = 0;
+    let received = 0;
+
+    // Look for description (everything between date and amounts)
+    const afterDate = line.substring(dateMatch[0].length).trim();
+    
+    // Extract amounts (€XXX.XX format)
+    const amountMatches = afterDate.match(/€([\d,]+\.?\d*)/g);
+    
+    if (amountMatches && amountMatches.length > 0) {
+      // Parse amounts
+      const amounts = amountMatches.map(a => parseFloat(a.replace('€', '').replace(',', '')));
+      
+      // Determine description (text before first amount)
+      const firstAmountIndex = afterDate.indexOf('€');
+      description = afterDate.substring(0, firstAmountIndex).trim();
+      
+      // Revolut format: last number is always the balance, before that is withdrawn or received
+      if (amounts.length >= 2) {
+        // Check context to determine if it's withdrawn or received
+        const amountIndex = afterDate.indexOf(amountMatches[0]);
+        const beforeAmount = afterDate.substring(0, amountIndex).toLowerCase();
+        
+        // If there are multiple amounts, check which column it belongs to
+        if (amounts.length === 2) {
+          // Most likely: amount + balance
+          // Need to check if it's in withdrawn or received column based on position/context
+          const fullLine = lines.slice(Math.max(0, i - 2), i + 3).join(' ');
+          
+          if (fullLine.includes('Para:') || fullLine.includes('Cartão:') || description.toLowerCase().startsWith('to ')) {
+            withdrawn = amounts[0];
+          } else if (fullLine.includes('De:') || fullLine.includes('Referência: From') || description.toLowerCase().includes('transferência de') || description.toLowerCase().includes('carregamento')) {
+            received = amounts[0];
+          } else {
+            // Default: if description suggests expense
+            if (description.toLowerCase().startsWith('to ') || description.toLowerCase().includes('pagamento')) {
+              withdrawn = amounts[0];
+            } else {
+              received = amounts[0];
+            }
+          }
+        } else if (amounts.length === 3) {
+          // Likely: withdrawn + received + balance
+          withdrawn = amounts[0];
+          received = amounts[1];
+        }
+      }
+    } else {
+      // Description might span multiple lines
+      description = afterDate;
+      
+      // Look ahead for amounts in next lines
+      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
+        const nextLine = lines[j].trim();
+        const nextAmounts = nextLine.match(/€([\d,]+\.?\d*)/g);
+        
+        if (nextAmounts) {
+          const amounts = nextAmounts.map(a => parseFloat(a.replace('€', '').replace(',', '')));
+          if (amounts.length >= 2) {
+            // Determine based on context
+            if (description.toLowerCase().startsWith('to ') || nextLine.toLowerCase().includes('para:')) {
+              withdrawn = amounts[0];
+            } else {
+              received = amounts[0];
+            }
+          }
+          break;
+        }
+        
+        // Append to description if no amounts found yet
+        if (!nextAmounts && nextLine && !nextLine.match(/^\d{2}\/\d{2}\/\d{4}/)) {
+          description += ' ' + nextLine;
+        }
+      }
+    }
+
+    // Clean description
+    description = description
+      .replace(/Para:.*Cartão:.*$/i, '')
+      .replace(/Referência:.*$/i, '')
+      .replace(/De:.*$/i, '')
+      .trim();
+
+    if (!description || (withdrawn === 0 && received === 0)) continue;
+
+    // Determine type and category
+    let type: TransactionType;
+    let category = 'Outros';
+    const amount = withdrawn > 0 ? withdrawn : received;
+
+    // Investment: Fundos Monetários
+    if (description.includes('Fundos Monetários')) {
+      type = TransactionType.INVESTMENT;
+      category = 'Fundos';
+    }
+    // Expense: withdrawn column
+    else if (withdrawn > 0) {
+      type = TransactionType.EXPENSE;
+      
+      // Categorize
+      if (description.toLowerCase().includes('supermercado') || description.includes('Pingo Doce') || description.includes('Continente') || description.includes('Lidl') || description.includes('Auchan')) {
+        category = 'Supermercado';
+      } else if (description.includes('Uber') || description.includes('Restaurante') || description.includes('Bar ')) {
+        category = 'Restaurantes';
+      } else if (description.includes('Google') || description.includes('OpenAI') || description.includes('Netflix') || description.includes('Stripe')) {
+        category = 'Serviços';
+      } else if (description.includes('Leroy Merlin') || description.includes('Klarna')) {
+        category = 'Casa';
+      } else if (description.includes('Amazon') || description.includes('Etsy') || description.includes('Pandora')) {
+        category = 'Lazer';
+      } else if (description.toLowerCase().includes('transferência') || description.startsWith('To ')) {
+        category = 'Transferência';
+      } else if (description.includes('Levantamento') || description.includes('numerário')) {
+        category = 'Levantamento';
+      } else if (description.includes('Comissão') || description.includes('taxa')) {
+        category = 'Taxas Bancárias';
+      }
+    }
+    // Income: received column
+    else if (received > 0) {
+      type = TransactionType.INCOME;
+      category = 'Transferência';
+      
+      if (description.toLowerCase().includes('salário') || description.toLowerCase().includes('ordenado')) {
+        category = 'Salário';
+      }
+    } else {
+      continue;
+    }
+
+    transactions.push({
+      date: isoDate,
+      description: description.substring(0, 100), // Limit length
+      amount,
+      type,
+      category
+    });
+
+    console.log(`✅ ${isoDate} | ${description.substring(0, 30)} | ${type} | €${amount}`);
+  }
+
+  console.log(`📊 Revolut parser extracted ${transactions.length} transactions`);
+  return transactions.length > 0 ? transactions : null;
+};
+
 // Convert File to Base64
 export const fileToGenerativePart = async (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -101,6 +299,16 @@ export const parseReceiptImage = async (file: File): Promise<Partial<Transaction
 
 // Prompt to parse raw bank statement text
 export const parseBankStatement = async (text: string): Promise<Omit<Transaction, 'id' | 'member'>[]> => {
+  // Try Revolut structured parser first
+  const revolutResult = parseRevolutStatement(text);
+  if (revolutResult) {
+    console.log('✅ Used Revolut structured parser');
+    return revolutResult;
+  }
+
+  // Fallback to AI parser for other banks
+  console.log('🤖 Using AI parser for non-Revolut statement');
+  
   const ai = getClient();
   
   const today = new Date().toISOString().split('T')[0];
