@@ -114,20 +114,23 @@ const Dashboard: React.FC<DashboardProps> = ({ transactions }) => {
     // Calculate burn rate (avg expense per day so far)
     const daysPassed = Math.max(1, currentDay);
     const avgDailySpend = totalExpense / daysPassed;
+    const avgDailyInvestment = totalInvestments / daysPassed;
 
     // Project remaining days
     const remainingDays = daysInMonth - currentDay;
     const projectedExtraExpense = avgDailySpend * remainingDays;
+    const projectedExtraInvestment = avgDailyInvestment * remainingDays;
     
     const projectedTotalExpense = totalExpense + projectedExtraExpense;
-    const projectedBalance = totalIncome - projectedTotalExpense;
+    const projectedTotalInvestment = totalInvestments + projectedExtraInvestment;
+    const projectedBalance = totalIncome - projectedTotalExpense - projectedTotalInvestment;
 
     return {
-        avgDailySpend,
+        avgDailySpend: avgDailySpend + avgDailyInvestment,
         projectedBalance,
         status: projectedBalance > 0 ? 'safe' : 'danger'
     };
-  }, [monthTransactions, isCurrentMonth, totalIncome, totalExpense, balance, selectedDate]);
+  }, [monthTransactions, isCurrentMonth, totalIncome, totalExpense, totalInvestments, balance, selectedDate]);
 
 
   // --- Chart Data Preparation (filtered by month) ---
