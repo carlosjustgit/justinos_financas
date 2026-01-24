@@ -162,7 +162,7 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
     });
     
     console.log(`✅ ${isoDate} | ${description.substring(0, 30)} | ${type} | €${amount}`);
-  }
+  } // Close for loop
 
   console.log(`📊 Revolut parser extracted ${transactions.length} transactions`);
   return transactions.length > 0 ? transactions : null;
