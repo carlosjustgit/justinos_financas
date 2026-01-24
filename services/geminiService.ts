@@ -116,16 +116,15 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
       type = TransactionType.INVESTMENT;
       category = 'Fundos';
     }
-    // Check if it's in the "Dinheiro recebido" column (INCOME) - VERY SPECIFIC
-    // ONLY these exact patterns are income:
+    // Check if it's INCOME - ONLY these EXACT patterns:
     else if (
-      description.includes('Transferência de utilizador Revolut') ||
-      (description.includes('Carregamento de') && (context.includes('Referência:') || context.includes('De:'))) ||
-      context.includes('Sent from N26')
+      description.startsWith('Transferência de utilizador Revolut') ||
+      (description.startsWith('Carregamento de') && description.includes('JOSE CARLOS'))
     ) {
       type = TransactionType.INCOME;
       category = 'Transferência';
     }
+    // EVERYTHING ELSE remains EXPENSE (already set as default on line 110)
     
     // Categorize if it's an expense (already set as default)
     if (type === TransactionType.EXPENSE) {
