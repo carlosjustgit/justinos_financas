@@ -150,16 +150,32 @@ export const parseBankStatement = async (text: string): Promise<Omit<Transaction
        - "Carteira de pré-financiamento para carregamento no cofre" → IGNORA
        - Se vires "From Fundos" ou saídas de fundos → IGNORA também
     
-    3. Para "type" (Receita vs Despesa):
-       - "Transferência de utilizador Revolut" ou "Carregamento de" → RECEITA
-       - "To [nome]" ou "Transferência para" → DESPESA
-       - Compras com cartão (Uber, Netflix, Continente, etc) → DESPESA
+    3. Para "type" (Receita vs Despesa) - REGRAS ABSOLUTAS:
+       
+       DESPESA (dinheiro que SAI):
+       - Qualquer descrição que comece com "To" → SEMPRE DESPESA
+       - "To EUR Personal", "To EUR Pro", "To [qualquer nome]" → SEMPRE DESPESA
+       - "Transferência para" ou "Transferência enviada" → SEMPRE DESPESA
+       - Compras com cartão (Uber, Netflix, Continente, Wallison, etc) → DESPESA
+       - Pagamentos, taxas, levantamentos → DESPESA
+       
+       RECEITA (dinheiro que ENTRA):
+       - "Transferência de utilizador Revolut" → SEMPRE RECEITA
+       - "Carregamento de [nome]" → SEMPRE RECEITA
+       - "Sent from N26" ou de outros bancos → RECEITA
        - Salário, Ordenado, Vencimento → RECEITA
+       
+       NÃO uses o sinal do valor para decidir! Usa APENAS a descrição!
     
     4. CATEGORIAS específicas:
        - Supermercados: Continente, Pingo Doce, Lidl → "Supermercado"
        - Combustível: Galp, Repsol → "Transporte"
        - Serviços conhecidos: Netflix, Spotify, OpenAI → usar o nome exato
+    
+    5. NÃO IGNORES TRANSAÇÕES PEQUENAS:
+       - Transações de €0.70, €0.80, €0.90 são VÁLIDAS (ex: máquinas de vending)
+       - Transações de €5-15 são VÁLIDAS (ex: serviços, pequenas compras)
+       - Importa TODAS as transações, independentemente do valor!
     
     IMPORTANTE: Extrai APENAS transações da conta corrente PRINCIPAL do titular, ignorando subcontas e movimentos internos!
     
