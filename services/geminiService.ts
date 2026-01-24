@@ -76,50 +76,58 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
     const before = mainAccountText.substring(Math.max(0, startPos - 20), startPos);
     if (before.includes('de 1 de janeiro') || before.includes('para 24 de janeiro')) continue;
     
-    // Extract context (next 300 characters after the date)
-    const context = mainAccountText.substring(startPos, startPos + 300);
+    // Extract context (next 400 characters after the date to capture all columns)
+    const context = mainAccountText.substring(startPos, startPos + 400);
     
     // Parse date
     const [day, month, year] = date.split('/');
     const isoDate = `${year}-${month}-${day}`;
     
-    // Extract description (text between date and first amount)
-    const amountMatches = context.match(/€([\d,]+\.?\d*)/g);
-    if (!amountMatches || amountMatches.length < 2) continue; // Need at least amount + balance
+    // Extract description (text between date and first €)
+    const firstEuroPos = context.indexOf('€');
+    if (firstEuroPos === -1) continue;
     
-    const firstAmountPos = context.indexOf('€');
-    let description = context.substring(date.length, firstAmountPos).trim();
-    
-    // Clean description
+    let description = context.substring(date.length, firstEuroPos).trim();
     description = description.replace(/\s+/g, ' ').trim();
     if (!description || description.length < 2) continue;
     
-    // Parse amounts
-    const amounts = amountMatches.map(a => parseFloat(a.replace('€', '').replace(',', '')));
-    const amount = amounts[0]; // First amount is the transaction value
+    // Find the transaction amount by looking at the column structure
+    // Revolut format: Date | Description | Dinheiro retirado | Dinheiro recebido | Saldo
+    const restAfterDescription = context.substring(firstEuroPos);
     
-    // Determine if it's income or expense based on keywords in context
-    const contextLower = context.toLowerCase();
+    // Match all euro amounts in the remaining text
+    const allAmounts = restAfterDescription.match(/€([\d,]+\.?\d*)/g);
+    if (!allAmounts || allAmounts.length === 0) continue;
+    
+    // Parse numeric values
+    const numericAmounts = allAmounts
+      .map(a => parseFloat(a.replace('€', '').replace(',', '')))
+      .filter(n => !isNaN(n) && n > 0);
+    
+    if (numericAmounts.length === 0) continue;
+    
+    // Determine transaction type based on context and Revolut column logic
     let type: TransactionType;
     let category = 'Outros';
+    let amount = numericAmounts[0];
     
-    // Check for investment first
+    // Check for investment keywords first
     if (description.includes('Fundos Monetários')) {
       type = TransactionType.INVESTMENT;
       category = 'Fundos';
     }
-    // Check for income keywords - VERY specific criteria
+    // Check if it's in the "Dinheiro recebido" column (INCOME)
+    // Income keywords: "Transferência de utilizador", "Carregamento de", "Sent from"
     else if (
-      (description.includes('Transferência de utilizador Revolut')) ||
-      (description.includes('Carregamento de') && contextLower.includes('referência:')) ||
-      (contextLower.includes('referência: from') && contextLower.includes('de:')) ||
-      (contextLower.includes('sent from n26')) ||
-      (description.includes('To EUR Personal') && context.match(/€200\.00\s+€\d/)) // To EUR Personal when it's in "received" column
+      description.includes('Transferência de utilizador Revolut') ||
+      description.includes('Carregamento de') ||
+      context.includes('Sent from N26') ||
+      context.includes('Referência: From')
     ) {
       type = TransactionType.INCOME;
       category = 'Transferência';
     }
-    // DEFAULT: Everything else is EXPENSE (most common in statements)
+    // Everything else is EXPENSE (default)
     else {
       type = TransactionType.EXPENSE;
       
