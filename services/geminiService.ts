@@ -44,36 +44,33 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
   const transactions: Omit<Transaction, 'id' | 'member'>[] = [];
   const lines = text.split('\n');
   
-  let isMainAccount = false;
   let skipSection = false;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
 
-    // Detect section starts
-    if (line.includes('Operações da conta de') && !line.includes('Operações da conta de 1')) {
-      // Subconta (ex: Aysha) - skip
+    // Detect sections to SKIP
+    if (line.includes('Operações da conta de Aysha') || line.includes('Operações da conta de') && line.includes('Aysha')) {
       skipSection = true;
-      console.log('⏭️ Skipping subconta:', line);
+      console.log('⏭️ Skipping subconta: Aysha');
       continue;
     }
     
-    if (line.includes('Operações da conta') && !line.includes('Aysha') && !line.includes('Cofres')) {
-      // Main account
-      isMainAccount = true;
-      skipSection = false;
-      console.log('✅ Entering main account section');
+    if (line.includes('Cofres Pessoais') || line.includes('Transações de depósitos') || line.includes('Transações pendentes')) {
+      skipSection = true;
+      console.log('⏭️ Skipping section:', line.substring(0, 50));
       continue;
     }
 
-    if (line.includes('Cofres Pessoais') || line.includes('Depósito')) {
-      skipSection = true;
-      console.log('⏭️ Skipping:', line);
+    // Resume main account when we see the header
+    if (line.includes('Operações da conta de 1') || (line.includes('Data') && line.includes('Descrição') && line.includes('Dinheiro'))) {
+      skipSection = false;
+      console.log('✅ Entering/resuming main account section');
       continue;
     }
 
     // Skip if in wrong section
-    if (skipSection || !isMainAccount) continue;
+    if (skipSection) continue;
 
     // Match date pattern (DD/MM/YYYY)
     const dateMatch = line.match(/^(\d{2}\/\d{2}\/\d{4})/);
