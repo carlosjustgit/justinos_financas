@@ -36,14 +36,14 @@ export const getUserHouseholdId = async (): Promise<string | null> => {
 
 // --- Transactions API ---
 
-export const fetchTransactions = async (): Promise<Transaction[]> => {
-  const householdId = await getUserHouseholdId();
-  if (!householdId) return [];
+export const fetchTransactions = async (householdId?: string): Promise<Transaction[]> => {
+  const hid = householdId || await getUserHouseholdId();
+  if (!hid) return [];
 
   const { data, error } = await supabase
     .from('transactions')
     .select('*')
-    .eq('household_id', householdId)
+    .eq('household_id', hid)
     .order('date', { ascending: false });
 
   if (error) {
@@ -118,14 +118,14 @@ export const addBatchTransactionsDb = async (transactions: Transaction[]) => {
 
 // --- Budget API ---
 
-export const fetchBudgetItems = async (): Promise<BudgetItem[]> => {
-  const householdId = await getUserHouseholdId();
-  if (!householdId) return [];
+export const fetchBudgetItems = async (householdId?: string): Promise<BudgetItem[]> => {
+  const hid = householdId || await getUserHouseholdId();
+  if (!hid) return [];
 
   const { data, error } = await supabase
     .from('budget_items')
     .select('*')
-    .eq('household_id', householdId);
+    .eq('household_id', hid);
 
   if (error) {
     console.error('Error fetching budget:', error);
@@ -171,14 +171,14 @@ export const deleteBudgetItemDb = async (id: string) => {
 
 // --- Categories API ---
 
-export const fetchCategories = async (): Promise<string[]> => {
-  const householdId = await getUserHouseholdId();
-  if (!householdId) return [];
+export const fetchCategories = async (householdId?: string): Promise<string[]> => {
+  const hid = householdId || await getUserHouseholdId();
+  if (!hid) return [];
 
   const { data, error } = await supabase
     .from('categories')
     .select('name')
-    .eq('household_id', householdId)
+    .eq('household_id', hid)
     .order('name');
 
   if (error) {

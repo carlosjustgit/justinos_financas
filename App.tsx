@@ -122,11 +122,13 @@ const App: React.FC = () => {
   };
 
   const loadData = async () => {
+    if (!currentHouseholdId) return;
+    
     setIsLoadingData(true);
     try {
-      const txs = await fetchTransactions();
-      const budgets = await fetchBudgetItems();
-      const cats = await fetchCategories();
+      const txs = await fetchTransactions(currentHouseholdId);
+      const budgets = await fetchBudgetItems(currentHouseholdId);
+      const cats = await fetchCategories(currentHouseholdId);
       setTransactions(txs);
       setBudgetItems(budgets);
       setCustomCategories(cats);
