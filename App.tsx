@@ -522,7 +522,13 @@ const App: React.FC = () => {
             <p className="text-xs text-slate-300 uppercase font-semibold mb-1">Saldo Familiar</p>
             <p className="text-2xl font-bold">
                {new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' }).format(
-                   transactions.reduce((acc, t) => acc + (t.type === 'Receita' ? t.amount : -t.amount), 0)
+                   transactions.reduce((acc, t) => {
+                     if (t.type === TransactionType.INCOME) return acc + t.amount;
+                     if (t.type === TransactionType.EXPENSE) return acc - t.amount;
+                     if (t.type === TransactionType.SAVINGS) return acc - t.amount;
+                     if (t.type === TransactionType.INVESTMENT) return acc - t.amount;
+                     return acc;
+                   }, 0)
                )}
             </p>
           </div>
