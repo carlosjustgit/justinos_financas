@@ -72,13 +72,18 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
     // Skip if in wrong section
     if (skipSection) continue;
 
-    // Match date pattern (DD/MM/YYYY)
-    const dateMatch = line.match(/^(\d{2}\/\d{2}\/\d{4})/);
+    // Match date pattern (DD/MM/YYYY) - can be anywhere in the line, not just start
+    const dateMatch = line.match(/(\d{2}\/\d{2}\/\d{4})/);
     if (!dateMatch) continue;
+    
+    // Skip if this is just a header line mentioning date ranges
+    if (line.toLowerCase().includes('de 1 de janeiro') || line.toLowerCase().includes('para 24 de janeiro')) continue;
 
     const date = dateMatch[1];
     const [day, month, year] = date.split('/');
     const isoDate = `${year}-${month}-${day}`;
+    
+    console.log(`🔍 Found date: ${date} in line: ${line.substring(0, 80)}`);
 
     // Try to find description and amounts in the same line or next lines
     let description = '';
