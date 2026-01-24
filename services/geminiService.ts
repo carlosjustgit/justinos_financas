@@ -129,8 +129,6 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
     
     // Categorize if it's an expense (already set as default)
     if (type === TransactionType.EXPENSE) {
-    // Categorize if it's an expense (already set as default)
-    if (type === TransactionType.EXPENSE) {
       // Categorize expenses
       if (description.includes('Pingo Doce') || description.includes('Continente') || description.includes('Lidl') || description.includes('Auchan')) {
         category = 'Supermercado';
