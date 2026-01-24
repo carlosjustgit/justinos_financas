@@ -222,11 +222,15 @@ const App: React.FC = () => {
   };
 
   const handleUpdateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    if (!currentHouseholdId) {
+      alert('Erro: Nenhum household selecionado');
+      return;
+    }
     setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
     try {
       const transaction = transactions.find(t => t.id === id);
       if (transaction) {
-        await updateTransactionDb({ ...transaction, ...updates });
+        await updateTransactionDb({ ...transaction, ...updates }, currentHouseholdId);
       }
     } catch (e) {
       console.error("Sync error", e);

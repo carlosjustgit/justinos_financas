@@ -78,18 +78,18 @@ export const deleteTransactionDb = async (id: string) => {
   if (error) throw error;
 };
 
-export const updateTransactionDb = async (transaction: Transaction) => {
+export const updateTransactionDb = async (transaction: Transaction, householdId?: string) => {
   const { id, ...rest } = transaction;
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not logged in");
 
-  const householdId = await getUserHouseholdId();
-  if (!householdId) throw new Error("User not in a household");
+  const hid = householdId || await getUserHouseholdId();
+  if (!hid) throw new Error("User not in a household");
 
   const { error } = await supabase
     .from('transactions')
-    .update({ ...rest, user_id: user.id, household_id: householdId })
+    .update({ ...rest, user_id: user.id, household_id: hid })
     .eq('id', id);
 
   if (error) throw error;
