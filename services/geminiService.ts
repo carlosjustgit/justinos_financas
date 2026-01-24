@@ -41,193 +41,117 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
 
   console.log('🎯 Detected Revolut statement - using structured parser');
   console.log('📄 Text length:', text.length, 'characters');
-  console.log('📄 First 500 chars:', text.substring(0, 500));
-  console.log('📄 Lines count:', text.split('\n').length);
 
   const transactions: Omit<Transaction, 'id' | 'member'>[] = [];
-  const lines = text.split('\n');
   
-  let skipSection = false;
+  // Split text into sections
+  const mainAccountStart = text.indexOf('Operações da conta de 1 de janeiro');
+  const ayshaSectionStart = text.indexOf('Operações da conta de Aysha');
+  const depositSectionStart = text.indexOf('Transações de depósitos');
+  
+  // Extract only main account section
+  let mainAccountText = text;
+  if (mainAccountStart !== -1) {
+    const endIndex = Math.min(
+      ayshaSectionStart !== -1 ? ayshaSectionStart : text.length,
+      depositSectionStart !== -1 ? depositSectionStart : text.length
+    );
+    mainAccountText = text.substring(mainAccountStart, endIndex);
+  }
+  
+  console.log('📝 Main account text length:', mainAccountText.length);
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-
-    // Detect sections to SKIP
-    if (line.includes('Operações da conta de Aysha') || line.includes('Operações da conta de') && line.includes('Aysha')) {
-      skipSection = true;
-      console.log('⏭️ Skipping subconta: Aysha');
-      continue;
-    }
+  // Find ALL date occurrences with regex
+  const dateRegex = /(\d{2}\/\d{2}\/\d{4})/g;
+  const dates = [...mainAccountText.matchAll(dateRegex)];
+  
+  console.log(`🔍 Found ${dates.length} date occurrences`);
+  
+  for (let i = 0; i < dates.length; i++) {
+    const match = dates[i];
+    const date = match[1];
+    const startPos = match.index!;
     
-    if (line.includes('Cofres Pessoais') || line.includes('Transações de depósitos') || line.includes('Transações pendentes')) {
-      skipSection = true;
-      console.log('⏭️ Skipping section:', line.substring(0, 50));
-      continue;
-    }
-
-    // Resume main account when we see the header
-    if (line.includes('Operações da conta de 1') || (line.includes('Data') && line.includes('Descrição') && line.includes('Dinheiro'))) {
-      skipSection = false;
-      console.log('✅ Entering/resuming main account section');
-      continue;
-    }
-
-    // Skip if in wrong section
-    if (skipSection) continue;
-
-    // Match date pattern (DD/MM/YYYY) - can be anywhere in the line, not just start
-    const dateMatch = line.match(/(\d{2}\/\d{2}\/\d{4})/);
-    if (!dateMatch) continue;
+    // Skip header dates like "de 1 de janeiro de 2026"
+    const before = mainAccountText.substring(Math.max(0, startPos - 20), startPos);
+    if (before.includes('de 1 de janeiro') || before.includes('para 24 de janeiro')) continue;
     
-    // Skip if this is just a header line mentioning date ranges
-    if (line.toLowerCase().includes('de 1 de janeiro') || line.toLowerCase().includes('para 24 de janeiro')) continue;
-
-    const date = dateMatch[1];
+    // Extract context (next 300 characters after the date)
+    const context = mainAccountText.substring(startPos, startPos + 300);
+    
+    // Parse date
     const [day, month, year] = date.split('/');
     const isoDate = `${year}-${month}-${day}`;
     
-    console.log(`🔍 Found date: ${date} in line: ${line.substring(0, 80)}`);
-
-    // Try to find description and amounts in the same line or next lines
-    let description = '';
-    let withdrawn = 0;
-    let received = 0;
-
-    // Look for description (everything between date and amounts)
-    const afterDate = line.substring(dateMatch[0].length).trim();
+    // Extract description (text between date and first amount)
+    const amountMatches = context.match(/€([\d,]+\.?\d*)/g);
+    if (!amountMatches || amountMatches.length < 2) continue; // Need at least amount + balance
     
-    // Extract amounts (€XXX.XX format)
-    const amountMatches = afterDate.match(/€([\d,]+\.?\d*)/g);
+    const firstAmountPos = context.indexOf('€');
+    let description = context.substring(date.length, firstAmountPos).trim();
     
-    if (amountMatches && amountMatches.length > 0) {
-      // Parse amounts
-      const amounts = amountMatches.map(a => parseFloat(a.replace('€', '').replace(',', '')));
-      
-      // Determine description (text before first amount)
-      const firstAmountIndex = afterDate.indexOf('€');
-      description = afterDate.substring(0, firstAmountIndex).trim();
-      
-      // Revolut format: last number is always the balance, before that is withdrawn or received
-      if (amounts.length >= 2) {
-        // Check context to determine if it's withdrawn or received
-        const amountIndex = afterDate.indexOf(amountMatches[0]);
-        const beforeAmount = afterDate.substring(0, amountIndex).toLowerCase();
-        
-        // If there are multiple amounts, check which column it belongs to
-        if (amounts.length === 2) {
-          // Most likely: amount + balance
-          // Need to check if it's in withdrawn or received column based on position/context
-          const fullLine = lines.slice(Math.max(0, i - 2), i + 3).join(' ');
-          
-          if (fullLine.includes('Para:') || fullLine.includes('Cartão:') || description.toLowerCase().startsWith('to ')) {
-            withdrawn = amounts[0];
-          } else if (fullLine.includes('De:') || fullLine.includes('Referência: From') || description.toLowerCase().includes('transferência de') || description.toLowerCase().includes('carregamento')) {
-            received = amounts[0];
-          } else {
-            // Default: if description suggests expense
-            if (description.toLowerCase().startsWith('to ') || description.toLowerCase().includes('pagamento')) {
-              withdrawn = amounts[0];
-            } else {
-              received = amounts[0];
-            }
-          }
-        } else if (amounts.length === 3) {
-          // Likely: withdrawn + received + balance
-          withdrawn = amounts[0];
-          received = amounts[1];
-        }
-      }
-    } else {
-      // Description might span multiple lines
-      description = afterDate;
-      
-      // Look ahead for amounts in next lines
-      for (let j = i + 1; j < Math.min(i + 5, lines.length); j++) {
-        const nextLine = lines[j].trim();
-        const nextAmounts = nextLine.match(/€([\d,]+\.?\d*)/g);
-        
-        if (nextAmounts) {
-          const amounts = nextAmounts.map(a => parseFloat(a.replace('€', '').replace(',', '')));
-          if (amounts.length >= 2) {
-            // Determine based on context
-            if (description.toLowerCase().startsWith('to ') || nextLine.toLowerCase().includes('para:')) {
-              withdrawn = amounts[0];
-            } else {
-              received = amounts[0];
-            }
-          }
-          break;
-        }
-        
-        // Append to description if no amounts found yet
-        if (!nextAmounts && nextLine && !nextLine.match(/^\d{2}\/\d{2}\/\d{4}/)) {
-          description += ' ' + nextLine;
-        }
-      }
-    }
-
     // Clean description
-    description = description
-      .replace(/Para:.*Cartão:.*$/i, '')
-      .replace(/Referência:.*$/i, '')
-      .replace(/De:.*$/i, '')
-      .trim();
-
-    if (!description || (withdrawn === 0 && received === 0)) continue;
-
-    // Determine type and category
+    description = description.replace(/\s+/g, ' ').trim();
+    if (!description || description.length < 2) continue;
+    
+    // Parse amounts
+    const amounts = amountMatches.map(a => parseFloat(a.replace('€', '').replace(',', '')));
+    const amount = amounts[0]; // First amount is the transaction value
+    
+    // Determine if it's income or expense based on keywords in context
+    const contextLower = context.toLowerCase();
     let type: TransactionType;
     let category = 'Outros';
-    const amount = withdrawn > 0 ? withdrawn : received;
-
-    // Investment: Fundos Monetários
+    
+    // Check for investment
     if (description.includes('Fundos Monetários')) {
       type = TransactionType.INVESTMENT;
       category = 'Fundos';
     }
-    // Expense: withdrawn column
-    else if (withdrawn > 0) {
+    // Check for income keywords (received money)
+    else if (
+      description.includes('Transferência de utilizador Revolut') ||
+      description.includes('Carregamento de') ||
+      contextLower.includes('referência: from') ||
+      contextLower.includes('sent from')
+    ) {
+      type = TransactionType.INCOME;
+      category = 'Transferência';
+    }
+    // Everything else is expense
+    else {
       type = TransactionType.EXPENSE;
       
-      // Categorize
-      if (description.toLowerCase().includes('supermercado') || description.includes('Pingo Doce') || description.includes('Continente') || description.includes('Lidl') || description.includes('Auchan')) {
+      // Categorize expenses
+      if (description.includes('Pingo Doce') || description.includes('Continente') || description.includes('Lidl') || description.includes('Auchan')) {
         category = 'Supermercado';
       } else if (description.includes('Uber') || description.includes('Restaurante') || description.includes('Bar ')) {
         category = 'Restaurantes';
-      } else if (description.includes('Google') || description.includes('OpenAI') || description.includes('Netflix') || description.includes('Stripe')) {
+      } else if (description.includes('Google') || description.includes('OpenAI') || description.includes('Netflix') || description.includes('Stripe') || description.includes('Replit')) {
         category = 'Serviços';
-      } else if (description.includes('Leroy Merlin') || description.includes('Klarna')) {
+      } else if (description.includes('Leroy Merlin') || description.includes('Klarna') || description.includes('Amazon')) {
         category = 'Casa';
-      } else if (description.includes('Amazon') || description.includes('Etsy') || description.includes('Pandora')) {
+      } else if (description.includes('Pandora') || description.includes('Etsy')) {
         category = 'Lazer';
-      } else if (description.toLowerCase().includes('transferência') || description.startsWith('To ')) {
+      } else if (description.startsWith('To ') || description.includes('Transferência para')) {
         category = 'Transferência';
       } else if (description.includes('Levantamento') || description.includes('numerário')) {
         category = 'Levantamento';
       } else if (description.includes('Comissão') || description.includes('taxa')) {
         category = 'Taxas Bancárias';
+      } else if (description.includes('Wallison')) {
+        category = 'Serviços';
       }
     }
-    // Income: received column
-    else if (received > 0) {
-      type = TransactionType.INCOME;
-      category = 'Transferência';
-      
-      if (description.toLowerCase().includes('salário') || description.toLowerCase().includes('ordenado')) {
-        category = 'Salário';
-      }
-    } else {
-      continue;
-    }
-
+    
     transactions.push({
       date: isoDate,
-      description: description.substring(0, 100), // Limit length
+      description: description.substring(0, 100),
       amount,
       type,
       category
     });
-
+    
     console.log(`✅ ${isoDate} | ${description.substring(0, 30)} | ${type} | €${amount}`);
   }
 
