@@ -131,36 +131,37 @@ export const parseBankStatement = async (text: string): Promise<Omit<Transaction
     Analisa o seguinte extrato bancário (texto não estruturado) e extrai as transações para JSON.
     O contexto é Portugal.
     Hoje é ${today}. Se o ano não estiver explícito, assume o ano corrente ou o mais provável com base na data de hoje.
-    Ignora cabeçalhos, rodapés ou saldos acumulados. Extrai apenas movimentos individuais.
     
-    INSTRUÇÕES CRÍTICAS PARA "type" (Receita vs Despesa):
+    ⚠️ ATENÇÃO - EXTRATOS REVOLUT COM MÚLTIPLAS CONTAS:
+    Os extratos Revolut frequentemente incluem VÁRIAS contas na mesma página:
+    - "Operações da conta" (conta corrente principal)
+    - "Operações da conta de [NOME]" (subcontas de outros membros, ex: Aysha)
+    - "Depósito" ou "Fundos Monetários Flexíveis" (investimentos automáticos)
+    - "Cofres Pessoais e de Grupo"
     
-    1. ANALISA O CONTEXTO, NÃO APENAS O SINAL DO VALOR:
-       - Se a descrição menciona "salário", "ordenado", "vencimento", "subsídio", é SEMPRE "Receita"
-       - Se a descrição menciona "compra", "pagamento", "débito", "taxa", é SEMPRE "Despesa"
-       - Se a descrição menciona "transferência recebida" ou "crédito de", é "Receita"
-       - Se a descrição menciona "transferência enviada" ou "débito para", é "Despesa"
+    REGRAS CRÍTICAS:
+    1. IGNORA COMPLETAMENTE transações de subcontas que NÃO sejam do titular principal:
+       - Se vires "Operações da conta de Aysha" → IGNORA essas linhas
+       - Se vires "Cofres Pessoais" → IGNORA
+       - IMPORTA APENAS transações da secção "Operações da conta" SEM nome adicional
     
-    2. PALAVRAS-CHAVE PARA RECEITA:
-       - Salário, Ordenado, Vencimento, Subsídio, Reembolso, Transferência Recebida, Crédito
-       - Se vires qualquer uma destas, é "Receita" mesmo que o valor tenha sinal negativo no extrato
+    2. IGNORA movimentos INTERNOS de investimentos automáticos:
+       - "To Fundos Monetários Flexíveis" → IGNORA (já são contabilizados como investimento)
+       - "Carteira de pré-financiamento para carregamento no cofre" → IGNORA
+       - Se vires "From Fundos" ou saídas de fundos → IGNORA também
     
-    3. PALAVRAS-CHAVE PARA DESPESA:
-       - Pagamento, Compra, Débito, Taxa, Transferência Enviada, Levantamento
-       - Nomes de lojas (Continente, Pingo Doce, Lidl, Netflix, Vodafone, etc) são SEMPRE "Despesa"
+    3. Para "type" (Receita vs Despesa):
+       - "Transferência de utilizador Revolut" ou "Carregamento de" → RECEITA
+       - "To [nome]" ou "Transferência para" → DESPESA
+       - Compras com cartão (Uber, Netflix, Continente, etc) → DESPESA
+       - Salário, Ordenado, Vencimento → RECEITA
     
-    4. PARA POUPANÇA E INVESTIMENTO:
-       - "Poupança": transferências para contas poupança (ex: "Revolut Savings", "Conta Poupança")
-       - "Investimento": compras de ações, fundos, crypto (ex: "Degiro", "Trading212", "Coinbase")
+    4. CATEGORIAS específicas:
+       - Supermercados: Continente, Pingo Doce, Lidl → "Supermercado"
+       - Combustível: Galp, Repsol → "Transporte"
+       - Serviços conhecidos: Netflix, Spotify, OpenAI → usar o nome exato
     
-    5. CATEGORIAS ESPECÍFICAS:
-       - Usa o nome exato se for conhecido (Netflix, Spotify, Vodafone, MEO, NOS)
-       - Para supermercados: usa "Supermercado" (Continente, Pingo Doce, Lidl, Minipreço, Aldi)
-       - Para combustível: usa "Transporte" (Galp, Repsol, BP, Cepsa)
-       - Para serviços públicos: usa "Serviços (Água/Luz/Net)" (EDP, Águas, MEO, NOS, Vodafone)
-       - Para bancos/taxas: usa "Taxas Bancárias" ou "Serviços Bancários"
-    
-    IMPORTANTE: Se houver ambiguidade, usa o contexto da descrição, NÃO o sinal do valor!
+    IMPORTANTE: Extrai APENAS transações da conta corrente PRINCIPAL do titular, ignorando subcontas e movimentos internos!
     
     TEXTO DO EXTRATO:
     ${text}
