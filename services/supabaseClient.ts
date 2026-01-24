@@ -53,18 +53,18 @@ export const fetchTransactions = async (householdId?: string): Promise<Transacti
   return data as Transaction[];
 };
 
-export const addTransactionDb = async (transaction: Transaction) => {
+export const addTransactionDb = async (transaction: Transaction, householdId?: string) => {
   const { id, ...rest } = transaction; 
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not logged in");
 
-  const householdId = await getUserHouseholdId();
-  if (!householdId) throw new Error("User not in a household");
+  const hid = householdId || await getUserHouseholdId();
+  if (!hid) throw new Error("User not in a household");
 
   const { error } = await supabase
     .from('transactions')
-    .insert([{ ...rest, id, user_id: user.id, household_id: householdId }]);
+    .insert([{ ...rest, id, user_id: user.id, household_id: hid }]);
 
   if (error) throw error;
 };
@@ -95,18 +95,18 @@ export const updateTransactionDb = async (transaction: Transaction) => {
   if (error) throw error;
 };
 
-export const addBatchTransactionsDb = async (transactions: Transaction[]) => {
+export const addBatchTransactionsDb = async (transactions: Transaction[], householdId?: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not logged in");
 
-  const householdId = await getUserHouseholdId();
-  if (!householdId) throw new Error("User not in a household");
+  const hid = householdId || await getUserHouseholdId();
+  if (!hid) throw new Error("User not in a household");
 
   const records = transactions.map(({ id, ...rest }) => ({
     ...rest,
     id,
     user_id: user.id,
-    household_id: householdId
+    household_id: hid
   }));
 
   const { error } = await supabase
@@ -138,19 +138,19 @@ export const fetchBudgetItems = async (householdId?: string): Promise<BudgetItem
   })) as BudgetItem[];
 };
 
-export const saveBudgetItemsDb = async (items: BudgetItem[]) => {
+export const saveBudgetItemsDb = async (items: BudgetItem[], householdId?: string) => {
    const { data: { user } } = await supabase.auth.getUser();
    if (!user) throw new Error("User not logged in");
 
-   const householdId = await getUserHouseholdId();
-   if (!householdId) throw new Error("User not in a household");
+   const hid = householdId || await getUserHouseholdId();
+   if (!hid) throw new Error("User not in a household");
 
    const records = items.map(({ id, isRecurring, ...rest }) => ({
      ...rest,
      id,
      is_recurring: isRecurring,
      user_id: user.id,
-     household_id: householdId
+     household_id: hid
    }));
 
    const { error } = await supabase
@@ -189,16 +189,16 @@ export const fetchCategories = async (householdId?: string): Promise<string[]> =
   return data.map(c => c.name);
 };
 
-export const addCategoryDb = async (categoryName: string) => {
+export const addCategoryDb = async (categoryName: string, householdId?: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("User not logged in");
 
-  const householdId = await getUserHouseholdId();
-  if (!householdId) throw new Error("User not in a household");
+  const hid = householdId || await getUserHouseholdId();
+  if (!hid) throw new Error("User not in a household");
 
   const { error } = await supabase
     .from('categories')
-    .insert([{ name: categoryName, household_id: householdId }]);
+    .insert([{ name: categoryName, household_id: hid }]);
 
   if (error) {
     // Ignore duplicate errors (unique constraint)

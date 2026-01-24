@@ -182,10 +182,14 @@ const App: React.FC = () => {
   };
 
   const handleImport = async (newTransactions: Transaction[]) => {
+    if (!currentHouseholdId) {
+      alert('Erro: Nenhum household selecionado');
+      return;
+    }
     // Optimistic update
     setTransactions(prev => [...prev, ...newTransactions]);
     try {
-      await addBatchTransactionsDb(newTransactions);
+      await addBatchTransactionsDb(newTransactions, currentHouseholdId);
     } catch (e) {
       console.error("Sync error", e);
       alert("Erro ao guardar importação no servidor.");
@@ -194,9 +198,13 @@ const App: React.FC = () => {
   };
 
   const handleManualAdd = async (newTransaction: Transaction) => {
+    if (!currentHouseholdId) {
+      alert('Erro: Nenhum household selecionado');
+      return;
+    }
     setTransactions(prev => [newTransaction, ...prev]);
     try {
-      await addTransactionDb(newTransaction);
+      await addTransactionDb(newTransaction, currentHouseholdId);
     } catch (e) {
       console.error("Sync error", e);
       loadData();
@@ -231,6 +239,10 @@ const App: React.FC = () => {
     const currentIds = new Set(items.map(i => i.id));
     const toDelete = budgetItems.filter(old => !currentIds.has(old.id));
     
+    if (!currentHouseholdId) {
+      alert('Erro: Nenhum household selecionado');
+      return;
+    }
     setBudgetItems(items); // Optimistic
 
     try {
@@ -239,7 +251,7 @@ const App: React.FC = () => {
         await deleteBudgetItemDb(item.id);
       }
       // 2. Upsert current
-      await saveBudgetItemsDb(items);
+      await saveBudgetItemsDb(items, currentHouseholdId);
       
       // 3. RELOAD DATA TO GET FRESH DATA FROM SUPABASE!
       await loadData();
@@ -251,8 +263,12 @@ const App: React.FC = () => {
   };
 
   const handleAddCategory = async (categoryName: string) => {
+    if (!currentHouseholdId) {
+      alert('Erro: Nenhum household selecionado');
+      return;
+    }
     try {
-      await addCategoryDb(categoryName);
+      await addCategoryDb(categoryName, currentHouseholdId);
       // Add to local state immediately
       setCustomCategories(prev => [...new Set([...prev, categoryName])].sort());
       console.log('Category saved:', categoryName);
