@@ -145,27 +145,33 @@ export const parseBankStatement = async (text: string): Promise<Omit<Transaction
        - Se vires "Cofres Pessoais" → IGNORA
        - IMPORTA APENAS transações da secção "Operações da conta" SEM nome adicional
     
-    2. IGNORA movimentos INTERNOS de investimentos automáticos:
-       - "To Fundos Monetários Flexíveis" → IGNORA (já são contabilizados como investimento)
-       - "Carteira de pré-financiamento para carregamento no cofre" → IGNORA
-       - Se vires "From Fundos" ou saídas de fundos → IGNORA também
+    2. MOVIMENTOS de INVESTIMENTOS (NÃO ignores):
+       - "To Fundos Monetários Flexíveis" → INVESTIMENTO (aplicações em fundos)
+       - "Carteira de pré-financiamento para carregamento no cofre" → IGNORA (movimentos técnicos)
+       - "From Fundos" (retornos de fundos) → INVESTIMENTO
     
-    3. Para "type" (Receita vs Despesa) - REGRAS ABSOLUTAS:
+    3. Para "type" (Receita vs Despesa) - REGRAS COM CONTEXTO:
        
        DESPESA (dinheiro que SAI):
-       - Qualquer descrição que comece com "To" → SEMPRE DESPESA
-       - "To EUR Personal", "To EUR Pro", "To [qualquer nome]" → SEMPRE DESPESA
-       - "Transferência para" ou "Transferência enviada" → SEMPRE DESPESA
+       - "To Jose Carlos...", "To [outro nome pessoa]", "Transferência para" → DESPESA
+       - "Transferência internacional para" → DESPESA
        - Compras com cartão (Uber, Netflix, Continente, Wallison, etc) → DESPESA
        - Pagamentos, taxas, levantamentos → DESPESA
        
        RECEITA (dinheiro que ENTRA):
-       - "Transferência de utilizador Revolut" → SEMPRE RECEITA
-       - "Carregamento de [nome]" → SEMPRE RECEITA
+       - "Transferência de utilizador Revolut" → RECEITA
+       - "Carregamento de [nome]" → RECEITA
        - "Sent from N26" ou de outros bancos → RECEITA
        - Salário, Ordenado, Vencimento → RECEITA
        
-       NÃO uses o sinal do valor para decidir! Usa APENAS a descrição!
+       ATENÇÃO - "To EUR Personal" ou "To EUR Pro" (subcontas Revolut):
+       - Se o SALDO da linha AUMENTA ou está na coluna "recebido" → RECEITA (transferência da subconta para principal)
+       - Se o SALDO da linha DIMINUI ou está na coluna "retirado" → DESPESA (transferência da principal para subconta)
+       - Analisa o contexto dos valores e saldos para decidir corretamente!
+       
+       INVESTIMENTO (aplicações financeiras):
+       - "To Fundos Monetários Flexíveis" → INVESTIMENTO
+       - "Degiro", "Trading212", "Coinbase" → INVESTIMENTO
     
     4. CATEGORIAS específicas:
        - Supermercados: Continente, Pingo Doce, Lidl → "Supermercado"
