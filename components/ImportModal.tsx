@@ -102,23 +102,23 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
       const newTransactions: Transaction[] = [];
 
       extractedData.forEach(t => {
-        // IMPROVED Deduplication Logic:
-        // 1. Same date (±1 day tolerance for bank processing delays)
+        // PRECISE Deduplication Logic:
+        // Only mark as duplicate if ALL conditions are met:
+        // 1. EXACT same date (not ±1 day - different days are different transactions!)
         // 2. Same amount (within 0.01€)
-        // 3. Similar description (>70% similarity) OR same type
+        // 3. Very similar description (>90% similarity)
+        // 
+        // This avoids false positives like:
+        // - Going to same café 2 days in a row with same amount
+        // - Multiple small transactions in different days
         const isDuplicate = existingTransactions.some(existing => {
-            const dateDiff = Math.abs(
-              new Date(existing.date).getTime() - new Date(t.date).getTime()
-            ) / (1000 * 60 * 60 * 24); // days
-            
+            const exactDateMatch = existing.date === t.date;
             const amountMatch = Math.abs(existing.amount - t.amount) < 0.01;
-            const dateMatch = dateDiff <= 1; // within 1 day
             const descSimilarity = calculateSimilarity(existing.description, t.description);
-            const typeMatch = existing.type === t.type;
             
-            // Consider duplicate if:
-            // - Same date AND amount AND (high description similarity OR same type)
-            return dateMatch && amountMatch && (descSimilarity > 70 || typeMatch);
+            // Consider duplicate ONLY if:
+            // - EXACT same date AND amount AND very high description similarity (>90%)
+            return exactDateMatch && amountMatch && descSimilarity > 90;
         });
 
         if (isDuplicate) {
@@ -176,7 +176,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
 
         <div className="p-6 flex-1 overflow-y-auto space-y-4">
           <p className="text-sm text-gray-600">
-            A nossa IA consegue ler extratos de vários bancos e <strong>ignora automaticamente transações duplicadas</strong> (mesma data ±1 dia, mesmo valor e descrição similar).
+            A nossa IA consegue ler extratos de vários bancos e <strong>ignora automaticamente transações duplicadas</strong> (mesma data exata, mesmo valor e descrição >90% similar).
           </p>
 
           <div>
