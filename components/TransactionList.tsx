@@ -17,6 +17,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, budgetI
   const [filterType, setFilterType] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingTypeId, setEditingTypeId] = useState<string | null>(null);
   const [categorySearch, setCategorySearch] = useState('');
   
   const selectedMonth = selectedDate.toISOString().slice(0, 7); // YYYY-MM
@@ -160,6 +161,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, budgetI
             <tr>
               <th className="px-6 py-4">Data</th>
               <th className="px-6 py-4">Descrição</th>
+              <th className="px-6 py-4">Tipo</th>
               <th className="px-6 py-4">Categoria</th>
               <th className="px-6 py-4">Membro</th>
               <th className="px-6 py-4 text-right">Valor</th>
@@ -169,7 +171,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, budgetI
           <tbody className="divide-y divide-gray-100">
             {filteredTransactions.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-12 text-center text-gray-400">
+                <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
                   Nenhuma transação encontrada.
                 </td>
               </tr>
@@ -181,6 +183,43 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions, budgetI
                   </td>
                   <td className="px-6 py-4 text-sm font-medium text-slate-800">
                     {t.description}
+                  </td>
+                  <td className="px-6 py-4">
+                    {editingTypeId === t.id ? (
+                      <select
+                        value={t.type}
+                        onChange={(e) => {
+                          if (onUpdate) {
+                            onUpdate(t.id, { type: e.target.value as TransactionType });
+                          }
+                          setEditingTypeId(null);
+                        }}
+                        onBlur={() => setEditingTypeId(null)}
+                        autoFocus
+                        className="px-2.5 py-0.5 rounded-full text-xs font-medium border border-emerald-500 focus:ring-2 focus:ring-emerald-500 outline-none cursor-pointer"
+                      >
+                        <option value={TransactionType.INCOME}>Receita</option>
+                        <option value={TransactionType.EXPENSE}>Despesa</option>
+                        <option value={TransactionType.SAVING}>Poupança</option>
+                        <option value={TransactionType.INVESTMENT}>Investimento</option>
+                      </select>
+                    ) : (
+                      <button 
+                        onClick={() => setEditingTypeId(t.id)}
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                          t.type === TransactionType.INCOME ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' :
+                          t.type === TransactionType.EXPENSE ? 'bg-red-100 text-red-700 hover:bg-red-200' :
+                          t.type === TransactionType.SAVING ? 'bg-blue-100 text-blue-700 hover:bg-blue-200' :
+                          'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                        }`}
+                      >
+                        {t.type === TransactionType.INCOME ? '💰 Receita' :
+                         t.type === TransactionType.EXPENSE ? '💸 Despesa' :
+                         t.type === TransactionType.SAVING ? '🎯 Poupança' :
+                         '📈 Investimento'}
+                        <Edit2 className="w-3 h-3 opacity-50" />
+                      </button>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <button 
