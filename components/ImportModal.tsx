@@ -176,7 +176,7 @@ const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport, ex
 
         <div className="p-6 flex-1 overflow-y-auto space-y-4">
           <p className="text-sm text-gray-600">
-            A nossa IA consegue ler extratos de vários bancos e <strong>ignora automaticamente transações duplicadas</strong> (mesma data exata, mesmo valor e descrição >90% similar).
+            A nossa IA consegue ler extratos de vários bancos e <strong>ignora automaticamente transações duplicadas</strong> (mesma data exata, mesmo valor e descrição &gt;90% similar).
           </p>
 
           <div>
