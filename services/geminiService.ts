@@ -40,6 +40,9 @@ const parseRevolutStatement = (text: string): Omit<Transaction, 'id' | 'member'>
   }
 
   console.log('🎯 Detected Revolut statement - using structured parser');
+  console.log('📄 Text length:', text.length, 'characters');
+  console.log('📄 First 500 chars:', text.substring(0, 500));
+  console.log('📄 Lines count:', text.split('\n').length);
 
   const transactions: Omit<Transaction, 'id' | 'member'>[] = [];
   const lines = text.split('\n');
